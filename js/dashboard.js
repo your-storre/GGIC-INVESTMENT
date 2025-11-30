@@ -12,52 +12,50 @@ import {
     doc,
     getDoc,
     updateDoc,
-    serverTimestamp,
-    onSnapshot
+    serverTimestamp
 } from './firebase-config.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
+// Cache for instant page loads
+let pageCache = new Map();
 let currentUser = null;
 let userData = null;
-let earningsChart = null;
-let allocationChart = null;
-let transactions = [];
-let currentPage = 1;
-const transactionsPerPage = 10;
+let charts = new Map();
 
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDashboard();
+    initializePremiumDashboard();
     setupEventListeners();
-    initializeCharts();
+    preloadAllPages();
 });
 
-async function initializeDashboard() {
+async function initializePremiumDashboard() {
     // Check authentication state
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             await loadUserData(user);
-            await loadDashboardData();
-            setupNavigation();
-            setupRealTimeListeners();
+            initializeNavigation();
+            loadCurrentPage('overview');
+            initializeRealTimeUpdates();
         } else {
-            // Redirect to login if not authenticated
             window.location.href = 'login.html';
         }
     });
 }
 
 function setupEventListeners() {
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-
     // Mobile menu
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    }
+
+    // Avatar upload
+    const avatarUpload = document.querySelector('.avatar-upload');
+    const avatarFileInput = document.getElementById('avatarFileInput');
+    if (avatarUpload && avatarFileInput) {
+        avatarUpload.addEventListener('click', () => avatarFileInput.click());
+        avatarFileInput.addEventListener('change', handleAvatarUpload);
     }
 
     // Beneficiary form
@@ -66,694 +64,563 @@ function setupEventListeners() {
         beneficiaryForm.addEventListener('submit', handleBeneficiaryUpdate);
     }
 
-    // Avatar upload
-    const avatarUpload = document.getElementById('avatarUpload');
-    const avatarFileInput = document.getElementById('avatarFileInput');
-    if (avatarUpload && avatarFileInput) {
-        avatarUpload.addEventListener('click', () => avatarFileInput.click());
-        avatarFileInput.addEventListener('change', handleAvatarUpload);
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
     }
+}
 
-    // Chart period selector
-    const chartPeriod = document.getElementById('chartPeriod');
-    if (chartPeriod) {
-        chartPeriod.addEventListener('change', updateEarningsChart);
-    }
+// Ultra Fast Navigation System
+function initializeNavigation() {
+    const navItems = document.querySelectorAll('.nav-item[data-page], .action-btn[data-page]');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const pageId = this.getAttribute('data-page');
+            loadPageInstantly(pageId);
+        });
+    });
+}
 
-    // Transaction filters
-    const transactionFilter = document.getElementById('transactionFilter');
-    const transactionPeriod = document.getElementById('transactionPeriod');
-    if (transactionFilter) {
-        transactionFilter.addEventListener('change', filterTransactions);
-    }
-    if (transactionPeriod) {
-        transactionPeriod.addEventListener('change', filterTransactions);
-    }
-
-    // Partner filters
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
-        btn.addEventListener('click', () => filterPartners(btn.dataset.filter));
+function loadPageInstantly(pageId) {
+    // Hide all pages first (instant)
+    document.querySelectorAll('.page-content').forEach(page => {
+        page.style.display = 'none';
     });
 
-    // Refresh stocks
-    const refreshStocks = document.getElementById('refreshStocks');
-    if (refreshStocks) {
-        refreshStocks.addEventListener('click', initializeStockWidget);
-    }
-
-    // Password form
-    const passwordForm = document.getElementById('passwordForm');
-    if (passwordForm) {
-        passwordForm.addEventListener('submit', handlePasswordChange);
-    }
-
-    // Notification bell
-    const notificationBell = document.getElementById('notificationBell');
-    if (notificationBell) {
-        notificationBell.addEventListener('click', showNotifications);
-    }
-}
-
-async function loadUserData(user) {
-    try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-            userData = { id: userDoc.id, ...userDoc.data() };
-            updateUserInterface();
+    // Show target page (instant)
+    const targetPage = document.getElementById(pageId + '-page');
+    if (targetPage) {
+        targetPage.style.display = 'block';
+        targetPage.classList.add('active');
+        
+        // Update page title
+        document.getElementById('pageTitle').textContent = getPageTitle(pageId);
+        
+        // Update active nav state
+        updateActiveNav(pageId);
+        
+        // Load page data if not cached
+        if (!pageCache.has(pageId)) {
+            loadPageData(pageId);
         } else {
-            console.error('User data not found');
-            showMessage('Error loading user data', 'error');
+            // Use cached data for instant display
+            displayCachedData(pageId);
         }
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        showMessage('Error loading user data', 'error');
     }
 }
 
-function updateUserInterface() {
-    // Update user name and avatar
-    const userName = document.getElementById('userName');
-    const userAvatar = document.getElementById('userAvatar');
-    const profileName = document.getElementById('profileName');
-    const profileAvatar = document.getElementById('profileAvatar');
-    const profileFullName = document.getElementById('profileFullName');
-    const profileGhanaCard = document.getElementById('profileGhanaCard');
-    const profileEmail = document.getElementById('profileEmail');
-    const profilePhone = document.getElementById('profilePhone');
-    const memberSince = document.getElementById('memberSince');
-    const memberId = document.getElementById('memberId');
-
-    if (userData) {
-        const displayName = userData.fullName || currentUser.displayName || 'User';
-        const initials = getInitials(displayName);
-        
-        // Update text content
-        if (userName) userName.textContent = displayName;
-        if (profileName) profileName.textContent = displayName;
-        if (profileFullName) profileFullName.value = displayName;
-        if (profileGhanaCard) profileGhanaCard.value = userData.ghanaCard || 'Not provided';
-        if (profileEmail) profileEmail.value = userData.email || currentUser.email;
-        if (profilePhone) profilePhone.value = userData.phone || 'Not provided';
-        if (memberSince && userData.createdAt) {
-            const date = new Date(userData.createdAt);
-            memberSince.textContent = date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
-        }
-        if (memberId) memberId.textContent = `ID: ${userData.memberId || 'GGIC-M-' + userData.id.slice(-6)}`;
-
-        // Update avatars
-        updateAvatar(userAvatar, userData.photoURL, initials);
-        updateAvatar(profileAvatar, userData.photoURL, initials);
-    }
-}
-
-function updateAvatar(avatarElement, photoURL, initials) {
-    const avatarImage = avatarElement.querySelector('img');
-    const avatarInitials = avatarElement.querySelector('#avatarInitials, #profileAvatarInitials');
+function updateActiveNav(pageId) {
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
     
-    if (photoURL) {
-        avatarImage.src = photoURL;
-        avatarImage.style.display = 'block';
-        avatarInitials.style.display = 'none';
-    } else {
-        avatarImage.style.display = 'none';
-        avatarInitials.style.display = 'block';
-        avatarInitials.textContent = initials;
+    // Add active class to current page
+    const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if (activeNav) {
+        activeNav.classList.add('active');
     }
 }
 
-async function loadDashboardData() {
-    await loadInvestmentStats();
-    await loadRecentActivity();
-    await loadCurrentBeneficiary();
-    await loadTransactions();
-    await loadPartners();
-    initializeStockWidget();
-    loadNotifications();
+function getPageTitle(pageId) {
+    const titles = {
+        'overview': 'Portfolio Overview',
+        'transactions': 'Transaction History',
+        'beneficiary': 'Beneficiary Management',
+        'update-beneficiary': 'Update Beneficiary',
+        'partners': 'Investment Partners',
+        'performance': 'Performance Analytics',
+        'settings': 'Account Settings',
+        'security': 'Security Settings'
+    };
+    return titles[pageId] || 'GGIC Dashboard';
 }
 
-async function loadInvestmentStats() {
-    try {
-        // Calculate investment stats
-        const stats = {
-            investmentAmount: userData?.investmentAmount || 50000,
-            currentBalance: userData?.currentBalance || 58750,
-            dailyEarning: userData?.dailyEarning || 125,
-            daysToMaturity: calculateDaysToMaturity(),
-            totalGrowth: ((58750 - 50000) / 50000 * 100).toFixed(1)
-        };
+// Preload all pages for instant navigation
+function preloadAllPages() {
+    const pages = ['overview', 'transactions', 'beneficiary', 'partners', 'performance', 'settings', 'security'];
+    pages.forEach(page => {
+        initializePageData(page);
+    });
+}
 
-        // Update DOM elements
-        document.getElementById('investmentAmount').textContent = `₵${stats.investmentAmount.toLocaleString()}`;
-        document.getElementById('currentBalance').textContent = `₵${stats.currentBalance.toLocaleString()}`;
-        document.getElementById('dailyEarning').textContent = `₵${stats.dailyEarning.toLocaleString()}`;
-        document.getElementById('daysToMaturity').textContent = stats.daysToMaturity.toString();
-        
-        // Update change indicators
-        document.getElementById('investmentChange').textContent = `+${stats.totalGrowth}% total growth`;
-        document.getElementById('balanceChange').textContent = `+₵${(stats.currentBalance - stats.investmentAmount).toLocaleString()} earned`;
-        
-        const maturityStatus = document.getElementById('maturityStatus');
-        if (stats.daysToMaturity > 30) {
-            maturityStatus.textContent = 'Active';
-            maturityStatus.className = 'stat-change positive';
-        } else if (stats.daysToMaturity > 0) {
-            maturityStatus.textContent = `${stats.daysToMaturity} days left`;
-            maturityStatus.className = 'stat-change warning';
-        } else {
-            maturityStatus.textContent = 'Ready for payout';
-            maturityStatus.className = 'stat-change positive';
-        }
-
-    } catch (error) {
-        console.error('Error loading investment stats:', error);
+async function initializePageData(pageId) {
+    switch (pageId) {
+        case 'overview':
+            await loadOverviewData();
+            break;
+        case 'transactions':
+            await loadTransactionsData();
+            break;
+        case 'partners':
+            await loadPartnersData();
+            break;
+        case 'performance':
+            await loadPerformanceData();
+            break;
+        case 'settings':
+            await loadSettingsData();
+            break;
     }
 }
 
-function calculateDaysToMaturity() {
-    if (!userData?.maturityDate) return 45; // Default
+// Page Data Loaders
+async function loadOverviewData() {
+    const data = {
+        stats: {
+            investmentAmount: 150000,
+            currentBalance: 187500,
+            dailyEarning: 375,
+            daysToMaturity: 45
+        },
+        recentActivity: await generateRecentActivity(),
+        marketData: await getLiveMarketData()
+    };
     
-    const maturityDate = new Date(userData.maturityDate);
-    const today = new Date();
-    const diffTime = maturityDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    pageCache.set('overview', data);
+    displayOverview(data);
+}
+
+async function loadTransactionsData() {
+    const transactions = await generateTransactionHistory();
+    pageCache.set('transactions', transactions);
+    displayTransactions(transactions);
+}
+
+async function loadPartnersData() {
+    const partners = await generatePartnersList();
+    pageCache.set('partners', partners);
+    displayPartners(partners);
+}
+
+// Data Display Functions
+function displayOverview(data) {
+    if (!data) return;
     
-    return Math.max(0, diffDays);
-}
-
-async function loadRecentActivity() {
-    try {
-        // Mock activity data - in real app, fetch from Firestore
-        const activities = [
-            {
-                type: 'profit',
-                title: 'Daily Profit',
-                description: 'Daily investment return - Portfolio growth',
-                amount: 125,
-                date: new Date().toISOString(),
-                status: 'completed'
-            },
-            {
-                type: 'profit',
-                title: 'Daily Profit',
-                description: 'Daily investment return - Portfolio growth',
-                amount: 125,
-                date: new Date(Date.now() - 86400000).toISOString(),
-                status: 'completed'
-            },
-            {
-                type: 'deposit',
-                title: 'Initial Investment',
-                description: 'Investment deposit - Portfolio funding',
-                amount: 50000,
-                date: new Date(Date.now() - 172800000).toISOString(),
-                status: 'completed'
-            },
-            {
-                type: 'profit',
-                title: 'Daily Profit',
-                description: 'Daily investment return - Portfolio growth',
-                amount: 125,
-                date: new Date(Date.now() - 259200000).toISOString(),
-                status: 'completed'
-            }
-        ];
-
-        const activityList = document.getElementById('recentActivity');
-        if (activityList) {
-            activityList.innerHTML = activities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-icon ${activity.type}">
-                        <i class="fas ${getActivityIcon(activity.type)}"></i>
-                    </div>
-                    <div class="activity-details">
-                        <div class="activity-title">${activity.title}</div>
-                        <div class="activity-description">${activity.description}</div>
-                        <div class="activity-date">${formatDate(activity.date)}</div>
-                    </div>
-                    <div class="activity-amount ${activity.type === 'withdrawal' ? 'negative' : 'positive'}">
-                        ${activity.type === 'withdrawal' ? '-' : '+'}₵${activity.amount.toLocaleString()}
-                    </div>
-                </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading recent activity:', error);
-    }
-}
-
-async function loadTransactions() {
-    try {
-        // Mock transactions data
-        transactions = [
-            {
-                id: '1',
-                date: new Date().toISOString(),
-                type: 'profit',
-                description: 'Daily investment return',
-                amount: 125,
-                status: 'completed',
-                reference: 'PROF-001'
-            },
-            {
-                id: '2',
-                date: new Date(Date.now() - 86400000).toISOString(),
-                type: 'profit',
-                description: 'Daily investment return',
-                amount: 125,
-                status: 'completed',
-                reference: 'PROF-002'
-            },
-            {
-                id: '3',
-                date: new Date(Date.now() - 172800000).toISOString(),
-                type: 'deposit',
-                description: 'Initial investment deposit',
-                amount: 50000,
-                status: 'completed',
-                reference: 'DEP-001'
-            },
-            {
-                id: '4',
-                date: new Date(Date.now() - 259200000).toISOString(),
-                type: 'profit',
-                description: 'Daily investment return',
-                amount: 125,
-                status: 'completed',
-                reference: 'PROF-003'
-            },
-            {
-                id: '5',
-                date: new Date(Date.now() - 345600000).toISOString(),
-                type: 'profit',
-                description: 'Daily investment return',
-                amount: 125,
-                status: 'completed',
-                reference: 'PROF-004'
-            }
-        ];
-
-        displayTransactions();
-
-    } catch (error) {
-        console.error('Error loading transactions:', error);
-    }
-}
-
-function displayTransactions() {
-    const transactionsTable = document.getElementById('transactionsTable');
-    const tableInfo = document.getElementById('tableInfo');
+    // Update stats
+    document.getElementById('investmentAmount').textContent = `$${data.stats.investmentAmount.toLocaleString()}`;
+    document.getElementById('currentBalance').textContent = `$${data.stats.currentBalance.toLocaleString()}`;
+    document.getElementById('dailyEarning').textContent = `$${data.stats.dailyEarning.toLocaleString()}`;
+    document.getElementById('daysToMaturity').textContent = data.stats.daysToMaturity.toString();
     
-    if (!transactionsTable) return;
-
-    const filteredTransactions = filterTransactionsData();
-    const startIndex = (currentPage - 1) * transactionsPerPage;
-    const endIndex = startIndex + transactionsPerPage;
-    const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
-
-    if (paginatedTransactions.length === 0) {
-        transactionsTable.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center">
-                    <div class="empty-state">
-                        <i class="fas fa-exchange-alt"></i>
-                        <p>No transactions found</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-    } else {
-        transactionsTable.innerHTML = paginatedTransactions.map(transaction => `
-            <tr>
-                <td>${formatDate(transaction.date)}</td>
-                <td>
-                    <span class="transaction-type ${transaction.type}">
-                        <i class="fas ${getTransactionIcon(transaction.type)}"></i>
-                        ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                    </span>
-                </td>
-                <td>${transaction.description}</td>
-                <td>
-                    <span class="amount ${transaction.type === 'withdrawal' ? 'negative' : 'positive'}">
-                        ${transaction.type === 'withdrawal' ? '-' : '+'}₵${transaction.amount.toLocaleString()}
-                    </span>
-                </td>
-                <td><span class="status-badge ${transaction.status}">${transaction.status}</span></td>
-                <td class="text-small">${transaction.reference}</td>
-            </tr>
-        `).join('');
-    }
-
-    // Update table info and pagination
-    if (tableInfo) {
-        tableInfo.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, filteredTransactions.length)} of ${filteredTransactions.length} transactions`;
-    }
-
-    updatePagination(filteredTransactions.length);
-}
-
-function filterTransactionsData() {
-    const typeFilter = document.getElementById('transactionFilter').value;
-    const periodFilter = document.getElementById('transactionPeriod').value;
+    // Display recent activity
+    displayRecentActivity(data.recentActivity);
     
-    let filtered = transactions;
-
-    // Filter by type
-    if (typeFilter !== 'all') {
-        filtered = filtered.filter(t => t.type === typeFilter);
-    }
-
-    // Filter by period
-    if (periodFilter !== 'all') {
-        const now = new Date();
-        let startDate = new Date();
-        
-        switch (periodFilter) {
-            case '7d':
-                startDate.setDate(now.getDate() - 7);
-                break;
-            case '30d':
-                startDate.setDate(now.getDate() - 30);
-                break;
-            case '90d':
-                startDate.setDate(now.getDate() - 90);
-                break;
-        }
-        
-        filtered = filtered.filter(t => new Date(t.date) >= startDate);
-    }
-
-    return filtered;
-}
-
-function filterTransactions() {
-    currentPage = 1;
-    displayTransactions();
-}
-
-function updatePagination(totalItems) {
-    const pagination = document.getElementById('pagination');
-    if (!pagination) return;
-
-    const totalPages = Math.ceil(totalItems / transactionsPerPage);
+    // Display market data
+    displayMarketData(data.marketData);
     
-    if (totalPages <= 1) {
-        pagination.innerHTML = '';
-        return;
-    }
+    // Initialize charts
+    initializeOverviewCharts();
+}
 
-    let paginationHTML = '';
+function displayRecentActivity(activities) {
+    const container = document.getElementById('recentActivity');
+    if (!container) return;
     
-    // Previous button
-    paginationHTML += `
-        <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" 
-                onclick="changePage(${currentPage - 1})" 
-                ${currentPage === 1 ? 'disabled' : ''}>
-            <i class="fas fa-chevron-left"></i>
-        </button>
-    `;
-
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-            paginationHTML += `
-                <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
-                        onclick="changePage(${i})">
-                    ${i}
-                </button>
-            `;
-        } else if (i === currentPage - 2 || i === currentPage + 2) {
-            paginationHTML += `<span class="pagination-ellipsis">...</span>`;
-        }
-    }
-
-    // Next button
-    paginationHTML += `
-        <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" 
-                onclick="changePage(${currentPage + 1})" 
-                ${currentPage === totalPages ? 'disabled' : ''}>
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    `;
-
-    pagination.innerHTML = paginationHTML;
-}
-
-// Make changePage function available globally
-window.changePage = function(page) {
-    const totalPages = Math.ceil(filterTransactionsData().length / transactionsPerPage);
-    if (page >= 1 && page <= totalPages) {
-        currentPage = page;
-        displayTransactions();
-    }
-};
-
-async function loadCurrentBeneficiary() {
-    try {
-        // Mock beneficiary data
-        const beneficiary = {
-            name: 'Jane Doe',
-            relationship: 'spouse',
-            phone: '+233 24 987 6543',
-            email: 'jane.doe@example.com',
-            address: '123 Main Street, Accra, Ghana',
-            idNumber: 'GHA-987654321',
-            status: 'active',
-            lastUpdated: new Date('2024-01-15').toISOString()
-        };
-
-        const currentBeneficiary = document.getElementById('currentBeneficiary');
-        const beneficiaryStatus = document.getElementById('beneficiaryStatus');
-        
-        if (currentBeneficiary) {
-            currentBeneficiary.innerHTML = `
-                <div class="beneficiary-details">
-                    <div class="detail-row">
-                        <div class="detail-label">Full Name</div>
-                        <div class="detail-value">${beneficiary.name}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Relationship</div>
-                        <div class="detail-value">${beneficiary.relationship}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Phone Number</div>
-                        <div class="detail-value">${beneficiary.phone}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Email Address</div>
-                        <div class="detail-value">${beneficiary.email || 'Not provided'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Residential Address</div>
-                        <div class="detail-value">${beneficiary.address || 'Not provided'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">ID Number</div>
-                        <div class="detail-value">${beneficiary.idNumber || 'Not provided'}</div>
-                    </div>
-                    <div class="detail-row">
-                        <div class="detail-label">Last Updated</div>
-                        <div class="detail-value">${formatDate(beneficiary.lastUpdated)}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        if (beneficiaryStatus) {
-            beneficiaryStatus.textContent = beneficiary.status.charAt(0).toUpperCase() + beneficiary.status.slice(1);
-        }
-
-    } catch (error) {
-        console.error('Error loading beneficiary:', error);
-    }
-}
-
-async function loadPartners() {
-    try {
-        const partners = [
-            {
-                id: 1,
-                name: 'Kofi Jobs Construction Ltd',
-                sector: 'construction',
-                description: 'Leading infrastructure development company specializing in affordable housing and commercial projects across Ghana.',
-                investment: 15000000,
-                performance: 12.5,
-                employees: 250,
-                established: 2010,
-                location: 'Accra, Ghana'
-            },
-            {
-                id: 2,
-                name: 'Adom Agro Supplies',
-                sector: 'agriculture',
-                description: 'Agricultural inputs and processing company revolutionizing Ghana\'s farming sector with modern techniques and equipment.',
-                investment: 8500000,
-                performance: 8.2,
-                employees: 120,
-                established: 2015,
-                location: 'Kumasi, Ghana'
-            },
-            {
-                id: 3,
-                name: 'Nana Foods Processing',
-                sector: 'manufacturing',
-                description: 'Food manufacturing company producing high-quality Ghanaian food products for local and international markets.',
-                investment: 6200000,
-                performance: 15.3,
-                employees: 85,
-                established: 2012,
-                location: 'Tema, Ghana'
-            },
-            {
-                id: 4,
-                name: 'Twum & Sons Logistics',
-                sector: 'logistics',
-                description: 'Comprehensive logistics and transportation services connecting Ghanaian businesses to regional markets.',
-                investment: 12000000,
-                performance: 9.8,
-                employees: 180,
-                established: 2008,
-                location: 'Accra, Ghana'
-            },
-            {
-                id: 5,
-                name: 'Akosua Textiles Enterprise',
-                sector: 'manufacturing',
-                description: 'Traditional Ghanaian textile manufacturer preserving cultural heritage while embracing modern production methods.',
-                investment: 5500000,
-                performance: 7.5,
-                employees: 95,
-                established: 2018,
-                location: 'Koforidua, Ghana'
-            },
-            {
-                id: 6,
-                name: 'Ghana Tech Solutions',
-                sector: 'technology',
-                description: 'Innovative technology company developing software solutions for Ghana\'s growing digital economy.',
-                investment: 10000000,
-                performance: 22.1,
-                employees: 65,
-                established: 2020,
-                location: 'Accra, Ghana'
-            }
-        ];
-
-        displayPartners(partners);
-
-    } catch (error) {
-        console.error('Error loading partners:', error);
-    }
-}
-
-function displayPartners(partners) {
-    const partnersGrid = document.getElementById('partnersGrid');
-    if (!partnersGrid) return;
-
-    partnersGrid.innerHTML = partners.map(partner => `
-        <div class="card partner-card" data-sector="${partner.sector}">
-            <div class="partner-header">
-                <h3>${partner.name}</h3>
-                <span class="sector-badge ${partner.sector}">${partner.sector.charAt(0).toUpperCase() + partner.sector.slice(1)}</span>
+    container.innerHTML = activities.map(activity => `
+        <div class="activity-item">
+            <div class="activity-icon ${activity.type}">
+                <i class="fas ${getActivityIcon(activity.type)}"></i>
             </div>
-            <div class="partner-stats">
-                <div class="partner-stat">
-                    <div class="stat-value">₵${(partner.investment / 1000000).toFixed(1)}M</div>
-                    <div class="stat-label">GGIC Investment</div>
-                </div>
-                <div class="partner-stat">
-                    <div class="stat-value ${partner.performance >= 10 ? 'positive' : 'warning'}">${partner.performance}%</div>
-                    <div class="stat-label">YTD Performance</div>
-                </div>
+            <div class="activity-details">
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-description">${activity.description}</div>
+                <div class="activity-date">${activity.time}</div>
             </div>
-            <p class="partner-description">${partner.description}</p>
-            <div class="partner-details">
-                <div class="detail-item">
-                    <i class="fas fa-users"></i>
-                    <span>${partner.employees}+ employees</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-calendar"></i>
-                    <span>Est. ${partner.established}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>${partner.location}</span>
+            <div class="activity-amount ${activity.amount > 0 ? 'positive' : 'negative'}">
+                ${activity.amount > 0 ? '+' : ''}$${Math.abs(activity.amount).toLocaleString()}
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayMarketData(marketData) {
+    const container = document.getElementById('liveMarketData');
+    if (!container) return;
+    
+    container.innerHTML = marketData.map(stock => `
+        <div class="stock-item">
+            <div class="stock-info">
+                <div class="stock-symbol">${stock.symbol}</div>
+                <div class="stock-name">${stock.name}</div>
+            </div>
+            <div class="stock-price">
+                <div class="price">$${stock.price.toFixed(2)}</div>
+                <div class="change ${stock.change >= 0 ? 'positive' : 'negative'}">
+                    ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)} (${stock.changePercent.toFixed(2)}%)
                 </div>
             </div>
         </div>
     `).join('');
 }
 
-function filterPartners(sector) {
-    const partners = document.querySelectorAll('.partner-card');
-    const filterButtons = document.querySelectorAll('.filter-btn');
+function displayTransactions(transactions) {
+    const container = document.getElementById('transactionsTable');
+    if (!container) return;
     
-    // Update active filter button
-    filterButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === sector);
-    });
-    
-    // Filter partners
-    partners.forEach(partner => {
-        if (sector === 'all' || partner.dataset.sector === sector) {
-            partner.style.display = 'block';
-        } else {
-            partner.style.display = 'none';
-        }
-    });
+    container.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td>${transaction.date}<br><small>${transaction.time}</small></td>
+            <td>
+                <span class="transaction-type ${transaction.type}">
+                    <i class="fas ${getTransactionIcon(transaction.type)}"></i>
+                    ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                </span>
+            </td>
+            <td>${transaction.description}</td>
+            <td>
+                <span class="amount ${transaction.amount > 0 ? 'positive' : 'negative'}">
+                    ${transaction.amount > 0 ? '+' : ''}$${Math.abs(transaction.amount).toLocaleString()}
+                </span>
+            </td>
+            <td><span class="status-badge ${transaction.status}">${transaction.status}</span></td>
+            <td><small>${transaction.reference}</small></td>
+        </tr>
+    `).join('');
 }
 
-function initializeStockWidget() {
-    const stockData = [
-        { symbol: "GSE-CAL", name: "Cal Bank", price: 0.48, change: 0.02, changePercent: 4.35 },
-        { symbol: "GSE-EGH", name: "Ecobank Ghana", price: 6.10, change: 0.15, changePercent: 2.52 },
-        { symbol: "GSE-GCB", name: "GCB Bank", price: 4.25, change: -0.10, changePercent: -2.30 },
-        { symbol: "GSE-ML", name: "Cocoa Processing", price: 0.02, change: 0.00, changePercent: 0.00 },
-        { symbol: "GSE-SOG", name: "SOGEGH", price: 0.90, change: 0.05, changePercent: 5.88 },
-        { symbol: "GSE-TBL", name: "Trust Bank", price: 0.06, change: -0.01, changePercent: -1.64 }
-    ];
-
-    const stockList = document.getElementById('stockList');
-    if (stockList) {
-        stockList.innerHTML = stockData.map(stock => `
-            <div class="stock-item">
-                <div class="stock-info">
-                    <div class="stock-symbol">${stock.symbol}</div>
-                    <div class="stock-name">${stock.name}</div>
-                </div>
-                <div class="stock-price">
-                    <div class="price">₵${stock.price.toFixed(2)}</div>
-                    <div class="change ${stock.change >= 0 ? 'positive' : 'negative'}">
-                        ${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)} (${stock.changePercent.toFixed(2)}%)
+function displayPartners(partners) {
+    const container = document.getElementById('partnersGrid');
+    if (!container) return;
+    
+    container.innerHTML = partners.map(partner => `
+        <div class="partner-card">
+            <div class="partner-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="partner-logo">
+                        ${partner.logo}
                     </div>
+                    <h4 style="margin: 0;">${partner.name}</h4>
+                </div>
+                <span class="sector-badge ${partner.sector}">${partner.sector}</span>
+            </div>
+            <div class="partner-stats">
+                <div class="partner-stat">
+                    <div style="font-weight: 600; color: var(--primary-blue);">$${(partner.investment / 1000000).toFixed(1)}M</div>
+                    <div style="font-size: 0.8rem; color: var(--text-light);">GGIC Investment</div>
+                </div>
+                <div class="partner-stat">
+                    <div style="font-weight: 600; color: ${partner.performance >= 10 ? 'var(--success)' : 'var(--warning)'};">
+                        ${partner.performance >= 0 ? '+' : ''}${partner.performance}%
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-light);">YTD Performance</div>
                 </div>
             </div>
-        `).join('');
-    }
+            <p style="color: var(--text-light); font-size: 0.9rem; margin: 1rem 0; line-height: 1.5;">
+                ${partner.description}
+            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-light);">
+                <span><i class="fas fa-users"></i> ${partner.employees}+ employees</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${partner.location}</span>
+            </div>
+        </div>
+    `).join('');
 }
 
-function initializeCharts() {
-    // Earnings Growth Chart
-    const earningsCtx = document.getElementById('earningsChart');
-    if (earningsCtx) {
-        earningsChart = new Chart(earningsCtx, {
+// Data Generation Functions (Mock Data)
+async function generateRecentActivity() {
+    return [
+        {
+            type: 'profit',
+            title: 'Daily Investment Return',
+            description: 'Portfolio growth - Technology sector',
+            amount: 375,
+            time: '2 hours ago'
+        },
+        {
+            type: 'profit',
+            title: 'Dividend Payment',
+            description: 'MTN Ghana dividend distribution',
+            amount: 1250,
+            time: '1 day ago'
+        },
+        {
+            type: 'deposit',
+            title: 'Investment Top-up',
+            description: 'Additional capital injection',
+            amount: 50000,
+            time: '3 days ago'
+        }
+    ];
+}
+
+async function getLiveMarketData() {
+    // Mock live market data
+    return [
+        { symbol: 'AAPL', name: 'Apple Inc.', price: 182.63, change: 1.25, changePercent: 0.69 },
+        { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 138.21, change: 0.89, changePercent: 0.65 },
+        { symbol: 'MSFT', name: 'Microsoft Corp.', price: 407.59, change: 2.34, changePercent: 0.58 },
+        { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 174.99, change: -0.45, changePercent: -0.26 },
+        { symbol: 'TSLA', name: 'Tesla Inc.', price: 177.11, change: 3.21, changePercent: 1.85 }
+    ];
+}
+
+async function generateTransactionHistory() {
+    return [
+        {
+            date: 'Mar 20, 2024',
+            time: '10:30 AM',
+            type: 'profit',
+            description: 'Daily investment return - Portfolio growth',
+            amount: 375,
+            status: 'completed',
+            reference: 'PROF-001234'
+        },
+        {
+            date: 'Mar 19, 2024',
+            time: '09:15 AM',
+            type: 'profit',
+            description: 'MTN Ghana dividend distribution',
+            amount: 1250,
+            status: 'completed',
+            reference: 'DIV-005678'
+        },
+        {
+            date: 'Mar 18, 2024',
+            time: '02:45 PM',
+            type: 'deposit',
+            description: 'Additional capital investment',
+            amount: 50000,
+            status: 'completed',
+            reference: 'DEP-003421'
+        },
+        {
+            date: 'Mar 15, 2024',
+            time: '11:20 AM',
+            type: 'profit',
+            description: 'Weekly portfolio performance',
+            amount: 2625,
+            status: 'completed',
+            reference: 'PROF-009876'
+        }
+    ];
+}
+
+async function generatePartnersList() {
+    return [
+        {
+            name: 'MTN Ghana',
+            sector: 'telecom',
+            logo: 'MTN',
+            investment: 25000000,
+            performance: 18.5,
+            employees: 2500,
+            location: 'Accra, Ghana',
+            description: 'Leading telecommunications company in Ghana with nationwide coverage and innovative digital solutions.'
+        },
+        {
+            name: 'GCB Bank',
+            sector: 'banking',
+            logo: 'GCB',
+            investment: 18000000,
+            performance: 12.3,
+            employees: 1800,
+            location: 'Accra, Ghana',
+            description: 'Premier banking institution with extensive branch network and comprehensive financial services.'
+        },
+        {
+            name: 'Telecel Ghana',
+            sector: 'telecom',
+            logo: 'TCL',
+            investment: 15000000,
+            performance: 15.8,
+            employees: 1200,
+            location: 'Accra, Ghana',
+            description: 'Innovative telecom provider focusing on digital transformation and customer-centric solutions.'
+        },
+        {
+            name: 'Ecobank Ghana',
+            sector: 'banking',
+            logo: 'ECO',
+            investment: 22000000,
+            performance: 14.2,
+            employees: 2000,
+            location: 'Accra, Ghana',
+            description: 'Pan-African banking group offering diverse financial products across multiple countries.'
+        },
+        {
+            name: 'Kofi Jobs Construction',
+            sector: 'construction',
+            logo: 'KJC',
+            investment: 12000000,
+            performance: 22.1,
+            employees: 850,
+            location: 'Kumasi, Ghana',
+            description: 'Leading construction company specializing in infrastructure and commercial building projects.'
+        },
+        {
+            name: 'Adom Agro Supplies',
+            sector: 'agriculture',
+            logo: 'AAS',
+            investment: 8500000,
+            performance: 16.7,
+            employees: 450,
+            location: 'Tamale, Ghana',
+            description: 'Agricultural inputs and processing company revolutionizing farming practices in Northern Ghana.'
+        },
+        {
+            name: 'Ghana Commercial Bank',
+            sector: 'banking',
+            logo: 'GCB',
+            investment: 19500000,
+            performance: 13.8,
+            employees: 2200,
+            location: 'Accra, Ghana',
+            description: 'One of Ghana\'s largest banks with strong corporate and retail banking presence.'
+        },
+        {
+            name: 'Nana Foods Processing',
+            sector: 'manufacturing',
+            logo: 'NFP',
+            investment: 9500000,
+            performance: 19.3,
+            employees: 600,
+            location: 'Tema, Ghana',
+            description: 'Food manufacturing company producing high-quality Ghanaian food products for export markets.'
+        },
+        {
+            name: 'Twum & Sons Logistics',
+            sector: 'logistics',
+            logo: 'TSL',
+            investment: 11000000,
+            performance: 17.5,
+            employees: 720,
+            location: 'Takoradi, Ghana',
+            description: 'Comprehensive logistics and transportation services connecting Ghana to international markets.'
+        },
+        {
+            name: 'Akosua Textiles Enterprise',
+            sector: 'manufacturing',
+            logo: 'ATE',
+            investment: 7500000,
+            performance: 14.9,
+            employees: 480,
+            location: 'Koforidua, Ghana',
+            description: 'Traditional Ghanaian textile manufacturer preserving cultural heritage with modern techniques.'
+        },
+        {
+            name: 'Ghana Tech Solutions',
+            sector: 'technology',
+            logo: 'GTS',
+            investment: 13500000,
+            performance: 28.4,
+            employees: 320,
+            location: 'Accra, Ghana',
+            description: 'Innovative technology company developing software solutions for Ghana\'s digital economy.'
+        },
+        {
+            name: 'Standard Chartered Ghana',
+            sector: 'banking',
+            logo: 'SCB',
+            investment: 16500000,
+            performance: 11.8,
+            employees: 1500,
+            location: 'Accra, Ghana',
+            description: 'International banking group with strong presence in Ghana\'s corporate banking sector.'
+        },
+        {
+            name: 'Cal Bank',
+            sector: 'banking',
+            logo: 'CAL',
+            investment: 12500000,
+            performance: 15.2,
+            employees: 1100,
+            location: 'Accra, Ghana',
+            description: 'Dynamic banking institution focused on SME financing and digital banking solutions.'
+        },
+        {
+            name: 'Fidelity Bank Ghana',
+            sector: 'banking',
+            logo: 'FID',
+            investment: 14000000,
+            performance: 13.5,
+            employees: 1300,
+            location: 'Accra, Ghana',
+            description: 'Growing banking group with innovative retail and corporate banking products.'
+        },
+        {
+            name: 'Republic Bank Ghana',
+            sector: 'banking',
+            logo: 'REP',
+            investment: 11500000,
+            performance: 12.9,
+            employees: 950,
+            location: 'Accra, Ghana',
+            description: 'Caribbean-based banking group with strong retail banking presence in Ghana.'
+        },
+        {
+            name: 'Zenith Bank Ghana',
+            sector: 'banking',
+            logo: 'ZEN',
+            investment: 15500000,
+            performance: 14.7,
+            employees: 1200,
+            location: 'Accra, Ghana',
+            description: 'Nigerian banking giant with comprehensive financial services across West Africa.'
+        },
+        {
+            name: 'Access Bank Ghana',
+            sector: 'banking',
+            logo: 'ACC',
+            investment: 13500000,
+            performance: 16.1,
+            employees: 1050,
+            location: 'Accra, Ghana',
+            description: 'Pan-African banking group with growing presence in Ghana\'s financial sector.'
+        },
+        {
+            name: 'Stanbic Bank Ghana',
+            sector: 'banking',
+            logo: 'STA',
+            investment: 14500000,
+            performance: 13.2,
+            employees: 1250,
+            location: 'Accra, Ghana',
+            description: 'Standard Bank Group subsidiary offering corporate and investment banking services.'
+        },
+        {
+            name: 'Barclays Bank Ghana',
+            sector: 'banking',
+            logo: 'BAR',
+            investment: 17500000,
+            performance: 12.1,
+            employees: 1600,
+            location: 'Accra, Ghana',
+            description: 'International banking brand with long-standing presence in Ghana\'s banking industry.'
+        },
+        {
+            name: 'UT Bank Ghana',
+            sector: 'banking',
+            logo: 'UTB',
+            investment: 9500000,
+            performance: 18.3,
+            employees: 800,
+            location: 'Accra, Ghana',
+            description: 'Specialized banking services focusing on entrepreneurial and business development.'
+        }
+    ];
+}
+
+// Chart Initialization
+function initializeOverviewCharts() {
+    // Performance Chart
+    const performanceCtx = document.getElementById('performanceChart');
+    if (performanceCtx && !charts.has('performance')) {
+        const performanceChart = new Chart(performanceCtx, {
             type: 'line',
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 datasets: [{
-                    label: 'Portfolio Value',
-                    data: [50000, 52000, 54500, 56200, 57800, 58750, 60100, 61800, 63200, 64500, 65800, 67200],
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    label: 'Portfolio Value ($)',
+                    data: [150000, 158000, 165000, 172000, 178000, 183000, 187500, 192000, 196000, 200000, 203000, 205000],
+                    borderColor: '#ffd700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4
+                    tension: 0.4
                 }]
             },
             options: {
@@ -762,464 +629,216 @@ function initializeCharts() {
                 plugins: {
                     legend: {
                         display: false
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                return `Portfolio: ₵${context.parsed.y.toLocaleString()}`;
-                            }
-                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: false,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        },
                         ticks: {
                             callback: function(value) {
-                                return '₵' + value.toLocaleString();
+                                return '$' + value.toLocaleString();
                             }
                         }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
                     }
-                },
-                interaction: {
-                    mode: 'nearest',
-                    axis: 'x',
-                    intersect: false
                 }
             }
         });
+        charts.set('performance', performanceChart);
     }
+}
 
-    // Allocation Chart
-    const allocationCtx = document.getElementById('allocationChart');
-    if (allocationCtx) {
-        allocationChart = new Chart(allocationCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Construction', 'Agriculture', 'Food Processing', 'Logistics', 'Textiles', 'Technology'],
-                datasets: [{
-                    data: [25, 15, 12, 20, 10, 18],
-                    backgroundColor: [
-                        '#3b82f6',
-                        '#10b981',
-                        '#f59e0b',
-                        '#ef4444',
-                        '#8b5cf6',
-                        '#06b6d4'
-                    ],
-                    borderWidth: 3,
-                    borderColor: '#ffffff',
-                    hoverOffset: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 12,
-                            padding: 15,
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.label}: ${context.parsed}%`;
-                            }
-                        }
-                    }
-                },
-                cutout: '65%'
-            }
+// Beneficiary Management
+async function handleBeneficiaryUpdate(e) {
+    e.preventDefault();
+    
+    const formData = {
+        beneficiaryName: document.getElementById('beneficiaryName').value,
+        beneficiaryPhone: document.getElementById('beneficiaryPhone').value,
+        beneficiaryAddress: document.getElementById('beneficiaryAddress').value,
+        bankName: document.getElementById('bankName').value,
+        accountName: document.getElementById('accountName').value,
+        accountNumber: document.getElementById('accountNumber').value,
+        routingNumber: document.getElementById('routingNumber').value,
+        updateReason: document.getElementById('updateReason').value,
+        status: 'pending',
+        submittedAt: new Date().toISOString()
+    };
+
+    try {
+        // Save to Firestore
+        await addDoc(collection(db, 'beneficiaryRequests'), {
+            ...formData,
+            userId: currentUser.uid,
+            createdAt: serverTimestamp()
         });
+
+        // Show success modal
+        document.getElementById('successModal').style.display = 'flex';
+        
+        // Reset form
+        document.getElementById('beneficiaryForm').reset();
+        
+    } catch (error) {
+        console.error('Error submitting beneficiary request:', error);
+        showMessage('Error submitting request. Please try again.', 'error');
     }
 }
 
-function updateEarningsChart() {
-    const period = document.getElementById('chartPeriod').value;
-    // In real app, update chart data based on selected period
-    console.log('Updating chart for period:', period);
-    
-    // Simulate chart update
-    if (earningsChart) {
-        earningsChart.update();
+// Global Functions
+window.showUpdateBeneficiary = function() {
+    loadPageInstantly('update-beneficiary');
+};
+
+window.goBackToBeneficiary = function() {
+    loadPageInstantly('beneficiary');
+};
+
+window.closeSuccessModal = function() {
+    document.getElementById('successModal').style.display = 'none';
+    loadPageInstantly('beneficiary');
+};
+
+window.applyTransactionFilters = function() {
+    // Filter transactions based on selected criteria
+    const type = document.getElementById('transactionType').value;
+    const period = document.getElementById('transactionPeriod').value;
+    // Implementation would filter the displayed transactions
+    showMessage('Filters applied successfully', 'success');
+};
+
+// Utility Functions
+function getActivityIcon(type) {
+    const icons = {
+        'profit': 'fa-chart-line',
+        'deposit': 'fa-plus',
+        'withdrawal': 'fa-minus'
+    };
+    return icons[type] || 'fa-exchange-alt';
+}
+
+function getTransactionIcon(type) {
+    const icons = {
+        'profit': 'fa-chart-line',
+        'deposit': 'fa-arrow-down',
+        'withdrawal': 'fa-arrow-up'
+    };
+    return icons[type] || 'fa-exchange-alt';
+}
+
+function toggleMobileMenu() {
+    document.querySelector('.premium-sidebar').classList.toggle('mobile-open');
+}
+
+async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        const storage = getStorage();
+        const filePath = `avatars/${currentUser.uid}/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, filePath);
+        
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        // Update user profile
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            photoURL: downloadURL,
+            updatedAt: serverTimestamp()
+        });
+        
+        // Update UI
+        updateAvatar(downloadURL);
+        showMessage('Profile picture updated successfully', 'success');
+        
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        showMessage('Error updating profile picture', 'error');
     }
 }
 
-// ... (rest of the functions from previous implementation remain the same)
-// Including: setupNavigation, handleBeneficiaryUpdate, handleAvatarUpload, etc.
+function updateAvatar(photoURL) {
+    const avatarImage = document.getElementById('avatarImage');
+    const avatarInitials = document.getElementById('avatarInitials');
+    const profileAvatarImage = document.getElementById('profileAvatarImage');
+    const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+    
+    if (photoURL) {
+        if (avatarImage) {
+            avatarImage.src = photoURL;
+            avatarImage.style.display = 'block';
+        }
+        if (avatarInitials) avatarInitials.style.display = 'none';
+        if (profileAvatarImage) {
+            profileAvatarImage.src = photoURL;
+            profileAvatarImage.style.display = 'block';
+        }
+        if (profileAvatarInitials) profileAvatarInitials.style.display = 'none';
+    }
+}
 
-// Add new CSS for enhanced features
-const enhancedStyles = document.createElement('style');
-enhancedStyles.textContent = `
-    .stock-widget {
-        max-height: 300px;
-        overflow-y: auto;
+async function handleLogout() {
+    try {
+        await signOut(auth);
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Logout error:', error);
+        showMessage('Error during logout', 'error');
     }
-    
-    .stock-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    
-    .stock-item:last-child {
-        border-bottom: none;
-    }
-    
-    .stock-info {
-        flex: 1;
-    }
-    
-    .stock-symbol {
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-    
-    .stock-name {
-        font-size: 0.8rem;
-        color: var(--text-light);
-    }
-    
-    .stock-price {
-        text-align: right;
-    }
-    
-    .price {
-        font-weight: 600;
-    }
-    
-    .change.positive {
-        color: var(--success);
-        font-size: 0.8rem;
-    }
-    
-    .change.negative {
-        color: var(--error);
-        font-size: 0.8rem;
-    }
-    
-    .partner-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-    
-    .sector-badge {
-        padding: 0.25rem 0.5rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    
-    .sector-badge.construction {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-    
-    .sector-badge.agriculture {
-        background: #dcfce7;
-        color: #166534;
-    }
-    
-    .sector-badge.technology {
-        background: #f0f9ff;
-        color: #0c4a6e;
-    }
-    
-    .sector-badge.manufacturing {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    
-    .sector-badge.logistics {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .partner-stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin: 1rem 0;
-    }
-    
-    .partner-stat {
-        text-align: center;
-        padding: 0.5rem;
-        background: #f8fafc;
+}
+
+function showMessage(message, type = 'success') {
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = message;
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
         border-radius: 8px;
-    }
-    
-    .partner-description {
-        color: var(--text-light);
-        font-size: 0.9rem;
-        line-height: 1.5;
-        margin: 1rem 0;
-    }
-    
-    .partner-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .detail-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-        color: var(--text-light);
-    }
-    
-    .beneficiary-details {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .detail-row:last-child {
-        border-bottom: none;
-    }
-    
-    .detail-label {
+        color: white;
         font-weight: 600;
-        color: var(--text-dark);
-        min-width: 120px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? 'var(--success)' : 'var(--error)'};
+    `;
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (document.body.contains(messageDiv)) {
+                document.body.removeChild(messageDiv);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// Add CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
     
-    .detail-value {
-        color: var(--text-light);
-        text-align: right;
-        flex: 1;
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
     
-    .input-with-action {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .input-with-action .form-input {
-        flex: 1;
-    }
-    
-    .security-item, .notification-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .security-item:last-child, .notification-item:last-child {
-        border-bottom: none;
-    }
-    
-    .security-info h4, .notification-info h4 {
-        margin: 0 0 0.25rem 0;
-        font-size: 1rem;
-    }
-    
-    .security-info p, .notification-info p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: var(--text-light);
-    }
-    
-    .toggle-switch {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 24px;
-    }
-    
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    
-    .slider {
-        position: absolute;
-        cursor: pointer;
+    .modal-overlay {
+        display: none;
+        position: fixed;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-    }
-    
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: .4s;
-    }
-    
-    input:checked + .slider {
-        background-color: var(--success);
-    }
-    
-    input:checked + .slider:before {
-        transform: translateX(26px);
-    }
-    
-    .slider.round {
-        border-radius: 24px;
-    }
-    
-    .slider.round:before {
-        border-radius: 50%;
-    }
-    
-    .transaction-type {
-        display: inline-flex;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 10000;
+        justify-content: center;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-    
-    .transaction-type.deposit {
-        background: #dcfce7;
-        color: #166534;
-    }
-    
-    .transaction-type.profit {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    
-    .transaction-type.withdrawal {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .table-responsive {
-        overflow-x: auto;
-    }
-    
-    .pagination {
-        display: flex;
-        gap: 0.25rem;
-    }
-    
-    .pagination-btn {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.8rem;
-    }
-    
-    .pagination-btn:hover:not(.disabled) {
-        background: #f8fafc;
-    }
-    
-    .pagination-btn.active {
-        background: var(--primary-blue);
-        color: white;
-        border-color: var(--primary-blue);
-    }
-    
-    .pagination-btn.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    
-    .pagination-ellipsis {
-        padding: 0.5rem 0.25rem;
-        color: var(--text-light);
-    }
-    
-    .filter-buttons {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    
-    .filter-btn {
-        padding: 0.5rem 1rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.3s ease;
-    }
-    
-    .filter-btn:hover {
-        background: #f8fafc;
-    }
-    
-    .filter-btn.active {
-        background: var(--primary-blue);
-        color: white;
-        border-color: var(--primary-blue);
-    }
-    
-    .investment-summary {
-        text-align: right;
-    }
-    
-    .form-hint {
-        font-size: 0.8rem;
-        color: var(--text-light);
-        margin-top: 0.25rem;
-    }
-    
-    .text-small {
-        font-size: 0.8rem;
-    }
-    
-    .amount.positive {
-        color: var(--success);
-        font-weight: 600;
-    }
-    
-    .amount.negative {
-        color: var(--error);
-        font-weight: 600;
     }
 `;
-document.head.appendChild(enhancedStyles);
+document.head.appendChild(style);
