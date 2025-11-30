@@ -21,6 +21,19 @@
             border-radius: 8px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--accent-gold);
+        }
+
+        .admin-stat.primary {
+            border-left-color: var(--primary-blue);
+        }
+
+        .admin-stat.success {
+            border-left-color: var(--success);
+        }
+
+        .admin-stat.warning {
+            border-left-color: var(--warning);
         }
 
         .admin-stat-value {
@@ -95,6 +108,81 @@
         .tab-content.active {
             display: block;
         }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-action-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .quick-action-icon {
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+            margin-bottom: 1rem;
+        }
+
+        .admin-alerts {
+            background: #fef3cd;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .alert-item:not(:last-child) {
+            border-bottom: 1px solid #fde68a;
+        }
+
+        .system-health {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .health-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .health-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .health-status.healthy {
+            background: var(--success);
+        }
+
+        .health-status.warning {
+            background: var(--warning);
+        }
+
+        .health-status.error {
+            background: var(--error);
+        }
     </style>
 </head>
 <body>
@@ -159,7 +247,7 @@
                 <div class="top-bar-actions">
                     <div class="notification-bell">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-count">5</span>
+                        <span class="notification-count" id="adminNotificationCount">5</span>
                     </div>
                     <button class="mobile-menu-btn" id="mobileMenuBtn">
                         <i class="fas fa-bars"></i>
@@ -171,42 +259,107 @@
             <div class="dashboard-content">
                 <!-- Overview Page -->
                 <div id="overview-page" class="page-content active">
+                    <!-- System Health -->
+                    <div class="system-health">
+                        <div class="health-item">
+                            <div class="health-status healthy"></div>
+                            <span>Database</span>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-status healthy"></div>
+                            <span>Authentication</span>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-status healthy"></div>
+                            <span>Storage</span>
+                        </div>
+                        <div class="health-item">
+                            <div class="health-status healthy"></div>
+                            <span>Functions</span>
+                        </div>
+                    </div>
+
                     <!-- Admin Stats -->
                     <div class="admin-stats">
                         <div class="admin-stat">
-                            <div class="admin-stat-value" id="totalMembers">0</div>
+                            <div class="admin-stat-value" id="totalMembers">157</div>
                             <div class="admin-stat-label">Total Members</div>
                         </div>
-                        <div class="admin-stat">
-                            <div class="admin-stat-value" id="pendingAppointments">0</div>
+                        <div class="admin-stat primary">
+                            <div class="admin-stat-value" id="pendingAppointments">12</div>
                             <div class="admin-stat-label">Pending Appointments</div>
                         </div>
-                        <div class="admin-stat">
-                            <div class="admin-stat-value" id="pendingPayouts">0</div>
+                        <div class="admin-stat success">
+                            <div class="admin-stat-value" id="pendingPayouts">8</div>
                             <div class="admin-stat-label">Pending Payouts</div>
                         </div>
-                        <div class="admin-stat">
-                            <div class="admin-stat-value" id="totalInvestments">₵0</div>
+                        <div class="admin-stat warning">
+                            <div class="admin-stat-value" id="totalInvestments">₵7.85M</div>
                             <div class="admin-stat-label">Total Investments</div>
                         </div>
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="card-grid">
-                        <div class="card">
-                            <h3><i class="fas fa-user-plus"></i> Register New Member</h3>
-                            <p>Create new investor accounts and generate login credentials</p>
+                    <div class="quick-actions">
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <h3>Register New Member</h3>
+                            <p>Create new investor accounts</p>
                             <button class="btn btn-primary" onclick="showMemberRegistration()">Register Member</button>
                         </div>
-                        <div class="card">
-                            <h3><i class="fas fa-calendar-alt"></i> Manage Appointments</h3>
-                            <p>Review and approve investment consultation requests</p>
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <h3>Manage Appointments</h3>
+                            <p>Review consultation requests</p>
                             <button class="btn btn-primary" onclick="navigateToPage('appointments')">View Appointments</button>
                         </div>
-                        <div class="card">
-                            <h3><i class="fas fa-money-bill-wave"></i> Process Payouts</h3>
-                            <p>Manage investment maturity and payout approvals</p>
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <h3>Process Payouts</h3>
+                            <p>Manage investment maturities</p>
                             <button class="btn btn-primary" onclick="navigateToPage('payouts')">View Payouts</button>
+                        </div>
+                        <div class="quick-action-card">
+                            <div class="quick-action-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>Security Dashboard</h3>
+                            <p>Monitor system security</p>
+                            <button class="btn btn-primary" onclick="navigateToPage('security')">Security Center</button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Alerts -->
+                    <div class="admin-alerts">
+                        <h3 style="margin-bottom: 1rem; color: #92400e;">
+                            <i class="fas fa-exclamation-triangle"></i> System Alerts
+                        </h3>
+                        <div class="alert-item">
+                            <div>
+                                <strong>Daily Profit Calculation</strong>
+                                <p style="margin: 0; font-size: 0.9rem;">Scheduled to run at 6:00 AM GMT</p>
+                            </div>
+                            <span class="status-badge completed">Active</span>
+                        </div>
+                        <div class="alert-item">
+                            <div>
+                                <strong>2 Pending Beneficiary Changes</strong>
+                                <p style="margin: 0; font-size: 0.9rem;">Require administrative approval</p>
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="navigateToPage('beneficiaries')">Review</button>
+                        </div>
+                        <div class="alert-item">
+                            <div>
+                                <strong>Backup Completed</strong>
+                                <p style="margin: 0; font-size: 0.9rem;">Last backup: Today, 2:00 AM</p>
+                            </div>
+                            <span class="status-badge completed">Success</span>
                         </div>
                     </div>
 
@@ -231,23 +384,36 @@
                             </button>
                         </div>
                         
+                        <div class="member-filters" style="margin-bottom: 2rem;">
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-filter="all">All Members</button>
+                                <button class="filter-btn" data-filter="active">Active</button>
+                                <button class="filter-btn" data-filter="frozen">Frozen</button>
+                                <button class="filter-btn" data-filter="pending">Pending</button>
+                            </div>
+                        </div>
+                        
                         <div class="data-table">
                             <div class="table-content">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Investment</th>
-                                            <th>Status</th>
-                                            <th>Join Date</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="membersTable">
-                                        <!-- Members will be populated by JavaScript -->
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Member ID</th>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Investment</th>
+                                                <th>Balance</th>
+                                                <th>Status</th>
+                                                <th>Join Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="membersTable">
+                                            <!-- Members will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -259,9 +425,9 @@
                         <h2>Appointment Requests</h2>
                         
                         <div class="tab-navigation">
-                            <button class="tab-button active" data-tab="pending">Pending</button>
-                            <button class="tab-button" data-tab="approved">Approved</button>
-                            <button class="tab-button" data-tab="rejected">Rejected</button>
+                            <button class="tab-button active" data-tab="pending">Pending (12)</button>
+                            <button class="tab-button" data-tab="approved">Approved (45)</button>
+                            <button class="tab-button" data-tab="rejected">Rejected (8)</button>
                         </div>
 
                         <div class="tab-content active" id="pending-tab">
@@ -272,6 +438,7 @@
                                             <tr>
                                                 <th>Name</th>
                                                 <th>Email</th>
+                                                <th>Phone</th>
                                                 <th>Investment Amount</th>
                                                 <th>Preferred Date</th>
                                                 <th>Submitted</th>
@@ -339,22 +506,25 @@
                         
                         <div class="data-table">
                             <div class="table-content">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Member</th>
-                                            <th>Current Beneficiary</th>
-                                            <th>New Beneficiary</th>
-                                            <th>Relationship</th>
-                                            <th>Reason</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="beneficiaryRequestsTable">
-                                        <!-- Beneficiary requests will be populated by JavaScript -->
-                                    </tbody>
-                                </table>
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Current Beneficiary</th>
+                                                <th>New Beneficiary</th>
+                                                <th>Relationship</th>
+                                                <th>Reason</th>
+                                                <th>Submitted</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="beneficiaryRequestsTable">
+                                            <!-- Beneficiary requests will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -366,8 +536,9 @@
                         <h2>Payout Management</h2>
                         
                         <div class="tab-navigation">
-                            <button class="tab-button active" data-tab="maturity">Ready for Payout</button>
-                            <button class="tab-button" data-tab="completed">Completed Payouts</button>
+                            <button class="tab-button active" data-tab="maturity">Ready for Payout (8)</button>
+                            <button class="tab-button" data-tab="processing">Processing (3)</button>
+                            <button class="tab-button" data-tab="completed">Completed (127)</button>
                         </div>
 
                         <div class="tab-content active" id="maturity-tab">
@@ -377,6 +548,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Member</th>
+                                                <th>Member ID</th>
                                                 <th>Investment Amount</th>
                                                 <th>Total Return</th>
                                                 <th>Maturity Date</th>
@@ -386,6 +558,29 @@
                                         </thead>
                                         <tbody id="maturityPayoutsTable">
                                             <!-- Maturity payouts will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="processing-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Investment Amount</th>
+                                                <th>Total Payout</th>
+                                                <th>Initiated By</th>
+                                                <th>Initiated Date</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="processingPayoutsTable">
+                                            <!-- Processing payouts will be populated by JavaScript -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -404,6 +599,7 @@
                                                 <th>Payment Date</th>
                                                 <th>Processed By</th>
                                                 <th>Reference</th>
+                                                <th>Receipt</th>
                                             </tr>
                                         </thead>
                                         <tbody id="completedPayoutsTable">
@@ -429,26 +625,43 @@
                                         <label class="form-label">Recipients</label>
                                         <select class="form-select" id="notificationRecipients">
                                             <option value="all">All Members</option>
+                                            <option value="active">Active Members Only</option>
                                             <option value="specific">Specific Members</option>
                                         </select>
                                     </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Subject</label>
-                                        <input type="text" class="form-input" id="notificationSubject" required>
+                                    <div class="form-group" id="specificMembersGroup" style="display: none;">
+                                        <label class="form-label">Select Members</label>
+                                        <select class="form-select" id="specificMembers" multiple style="height: 120px;">
+                                            <!-- Members will be populated by JavaScript -->
+                                        </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Message</label>
-                                        <textarea class="form-input" id="notificationMessage" rows="5" required></textarea>
+                                        <label class="form-label">Subject *</label>
+                                        <input type="text" class="form-input" id="notificationSubject" required placeholder="Enter notification subject">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Message *</label>
+                                        <textarea class="form-input" id="notificationMessage" rows="5" required placeholder="Enter your message..."></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Priority</label>
+                                        <select class="form-select" id="notificationPriority">
+                                            <option value="normal">Normal</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
                                     </div>
                                     <div class="form-actions">
-                                        <button type="submit" class="btn btn-primary">Send Notification</button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-paper-plane"></i> Send Notification
+                                        </button>
                                     </div>
                                 </form>
                             </div>
                             
                             <div class="card">
                                 <h3><i class="fas fa-history"></i> Sent Notifications</h3>
-                                <div class="activity-list" id="sentNotifications">
+                                <div class="activity-list" id="sentNotifications" style="max-height: 400px; overflow-y: auto;">
                                     <!-- Sent notifications will be populated by JavaScript -->
                                 </div>
                             </div>
@@ -468,12 +681,19 @@
                                     <label class="form-label">Select Member</label>
                                     <select class="form-select" id="securityMemberSelect">
                                         <option value="">Select a member</option>
+                                        <!-- Members will be populated by JavaScript -->
                                     </select>
                                 </div>
                                 <div class="action-buttons">
-                                    <button class="btn btn-warning" onclick="freezeAccount()">Freeze Account</button>
-                                    <button class="btn btn-error" onclick="banUser()">Ban User</button>
-                                    <button class="btn btn-secondary" onclick="reset2FA()">Reset 2FA</button>
+                                    <button class="btn btn-warning" onclick="freezeAccount()">
+                                        <i class="fas fa-snowflake"></i> Freeze Account
+                                    </button>
+                                    <button class="btn btn-error" onclick="banUser()">
+                                        <i class="fas fa-ban"></i> Ban User
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="reset2FA()">
+                                        <i class="fas fa-sync-alt"></i> Reset 2FA
+                                    </button>
                                 </div>
                             </div>
                             
@@ -487,6 +707,7 @@
                                                     <th>User</th>
                                                     <th>Device</th>
                                                     <th>Last Login</th>
+                                                    <th>IP Address</th>
                                                     <th>Status</th>
                                                     <th>Actions</th>
                                                 </tr>
@@ -496,6 +717,29 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Logs -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <h3><i class="fas fa-clipboard-list"></i> Security Logs</h3>
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Event</th>
+                                                <th>User</th>
+                                                <th>IP Address</th>
+                                                <th>Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="securityLogsTable">
+                                            <!-- Security logs will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
