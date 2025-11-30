@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         :root {
             --primary-blue: #1a237e;
@@ -36,28 +35,26 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--light-grey);
             min-height: 100vh;
             color: var(--text-dark);
         }
 
-        .premium-dashboard {
-            display: grid;
-            grid-template-columns: 280px 1fr;
+        .dashboard-container {
+            display: flex;
             min-height: 100vh;
-            background: var(--light-grey);
         }
 
-        /* Premium Sidebar */
-        .premium-sidebar {
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
             background: var(--sidebar-bg);
             color: white;
             position: fixed;
-            width: 280px;
             height: 100vh;
             overflow-y: auto;
+            transition: transform 0.3s ease;
             z-index: 1000;
-            box-shadow: var(--shadow);
         }
 
         .sidebar-header {
@@ -66,7 +63,7 @@
             text-align: center;
         }
 
-        .premium-logo {
+        .logo {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -84,7 +81,6 @@
             justify-content: center;
             font-weight: 700;
             color: var(--dark-grey);
-            font-size: 1.2rem;
         }
 
         .logo-text {
@@ -137,7 +133,7 @@
         }
 
         /* Navigation */
-        .premium-nav {
+        .sidebar-nav {
             padding: 1.5rem 0;
         }
 
@@ -163,6 +159,7 @@
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
+            cursor: pointer;
         }
 
         .nav-item:hover {
@@ -182,13 +179,14 @@
         }
 
         /* Main Content */
-        .premium-main {
+        .main-content {
+            flex: 1;
             margin-left: 280px;
             background: var(--light-grey);
             min-height: 100vh;
         }
 
-        .premium-header {
+        .header {
             background: var(--header-bg);
             padding: 1rem 2rem;
             box-shadow: var(--shadow);
@@ -227,41 +225,29 @@
             justify-content: center;
         }
 
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
         /* Page Content */
-        .page-content {
+        .page {
             padding: 2rem;
             display: none;
         }
 
-        .page-content.active {
+        .page.active {
             display: block;
-            animation: fadeInUp 0.3s ease;
+            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Premium Cards */
-        .premium-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            border: var(--border);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .premium-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Stats Grid */
@@ -316,19 +302,6 @@
             color: var(--accent-gold);
         }
 
-        /* Charts Section */
-        .charts-section {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-container {
-            height: 300px;
-            position: relative;
-        }
-
         /* Quick Actions */
         .quick-actions {
             display: grid;
@@ -347,6 +320,7 @@
             transition: all 0.3s ease;
             text-decoration: none;
             color: inherit;
+            display: block;
         }
 
         .action-btn:hover {
@@ -365,12 +339,86 @@
             color: white;
         }
 
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Activity List */
+        .activity-list {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .activity-icon.profit {
+            background: var(--success);
+        }
+
+        .activity-icon.deposit {
+            background: var(--primary-blue);
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .activity-description {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .activity-amount {
+            font-weight: 600;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .activity-amount.positive {
+            color: var(--success);
+        }
+
         /* Tables */
         .data-table {
             background: var(--card-bg);
             border-radius: 16px;
             overflow: hidden;
             box-shadow: var(--shadow);
+            margin-bottom: 2rem;
         }
 
         .table-header {
@@ -413,20 +461,7 @@
             color: #065f46;
         }
 
-        .status-badge.pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
         /* Forms */
-        .form-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: var(--shadow);
-            margin-bottom: 2rem;
-        }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -451,7 +486,6 @@
         .form-input:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary-blue);
-            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
         }
 
         .form-row {
@@ -467,7 +501,7 @@
             margin-top: 2rem;
         }
 
-        /* Premium Buttons */
+        /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -557,11 +591,6 @@
             color: #166534;
         }
 
-        .sector-badge.construction {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
         /* Stock Widget */
         .stock-widget {
             background: var(--card-bg);
@@ -583,11 +612,6 @@
             padding: 1rem;
             background: #f8fafc;
             border-radius: 8px;
-            transition: background 0.3s ease;
-        }
-
-        .stock-item:hover {
-            background: #e2e8f0;
         }
 
         .stock-info {
@@ -624,89 +648,6 @@
             font-size: 0.8rem;
         }
 
-        /* Mobile Responsive */
-        @media (max-width: 1024px) {
-            .premium-dashboard {
-                grid-template-columns: 1fr;
-            }
-
-            .premium-sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-
-            .premium-sidebar.mobile-open {
-                transform: translateX(0);
-            }
-
-            .premium-main {
-                margin-left: 0;
-            }
-
-            .mobile-menu-btn {
-                display: block;
-            }
-
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--text-dark);
-            cursor: pointer;
-        }
-
-        /* Loading States */
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 3rem;
-            flex-direction: column;
-        }
-
-        .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary-blue);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* File Upload */
-        .file-upload {
-            border: 2px dashed #e2e8f0;
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-
-        .file-upload:hover {
-            border-color: var(--primary-blue);
-        }
-
-        .file-input {
-            display: none;
-        }
-
         /* Account Masking */
         .account-masked {
             font-family: 'Courier New', monospace;
@@ -717,29 +658,44 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* Premium Features */
-        .premium-feature {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 16px;
-            text-align: center;
-            margin: 2rem 0;
-        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
 
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--accent-gold);
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="premium-dashboard">
-        <!-- Premium Sidebar -->
-        <aside class="premium-sidebar">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="premium-logo">
+                <div class="logo">
                     <div class="logo-icon">
                         <i class="fas fa-gem"></i>
                     </div>
@@ -750,7 +706,6 @@
 
             <div class="user-profile">
                 <div class="user-avatar" id="userAvatar">
-                    <img id="avatarImage" style="display: none;">
                     <span id="avatarInitials">JD</span>
                 </div>
                 <div class="user-info">
@@ -759,18 +714,18 @@
                 </div>
             </div>
 
-            <nav class="premium-nav">
+            <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-title">Main</div>
-                    <a href="#overview" class="nav-item active" data-page="overview">
+                    <a class="nav-item active" data-page="overview">
                         <i class="fas fa-chart-line"></i>
                         <span>Portfolio Overview</span>
                     </a>
-                    <a href="#transactions" class="nav-item" data-page="transactions">
+                    <a class="nav-item" data-page="transactions">
                         <i class="fas fa-exchange-alt"></i>
                         <span>Transactions</span>
                     </a>
-                    <a href="#beneficiary" class="nav-item" data-page="beneficiary">
+                    <a class="nav-item" data-page="beneficiary">
                         <i class="fas fa-university"></i>
                         <span>Beneficiary</span>
                     </a>
@@ -778,11 +733,11 @@
 
                 <div class="nav-section">
                     <div class="nav-title">Investments</div>
-                    <a href="#partners" class="nav-item" data-page="partners">
+                    <a class="nav-item" data-page="partners">
                         <i class="fas fa-handshake"></i>
                         <span>Investment Partners</span>
                     </a>
-                    <a href="#performance" class="nav-item" data-page="performance">
+                    <a class="nav-item" data-page="performance">
                         <i class="fas fa-chart-bar"></i>
                         <span>Performance</span>
                     </a>
@@ -790,15 +745,15 @@
 
                 <div class="nav-section">
                     <div class="nav-title">Account</div>
-                    <a href="#settings" class="nav-item" data-page="settings">
+                    <a class="nav-item" data-page="settings">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
-                    <a href="#security" class="nav-item" data-page="security">
+                    <a class="nav-item" data-page="security">
                         <i class="fas fa-shield-alt"></i>
                         <span>Security</span>
                     </a>
-                    <a href="#" class="nav-item" id="logoutBtn">
+                    <a class="nav-item" id="logoutBtn">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
                     </a>
@@ -807,9 +762,9 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="premium-main">
+        <main class="main-content">
             <!-- Header -->
-            <header class="premium-header">
+            <header class="header">
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -819,16 +774,14 @@
                         <i class="fas fa-bell"></i>
                         <span class="notification-count">3</span>
                     </div>
-                    <div class="current-time" id="currentTime"></div>
                 </div>
             </header>
 
-            <!-- Page Content -->
-            <div class="page-content" id="overview-page">
-                <!-- Stats Grid -->
+            <!-- Overview Page -->
+            <div id="overview-page" class="page active">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value" id="investmentAmount">$150,000</div>
+                        <div class="stat-value">$150,000</div>
                         <div class="stat-label">Total Investment</div>
                         <div class="stat-change positive">
                             <i class="fas fa-arrow-up"></i>
@@ -836,7 +789,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="currentBalance">$187,500</div>
+                        <div class="stat-value">$187,500</div>
                         <div class="stat-label">Current Balance</div>
                         <div class="stat-change positive">
                             <i class="fas fa-arrow-up"></i>
@@ -844,7 +797,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="dailyEarning">$375</div>
+                        <div class="stat-value">$375</div>
                         <div class="stat-label">Daily Earnings</div>
                         <div class="stat-change positive">
                             <i class="fas fa-arrow-up"></i>
@@ -852,7 +805,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="daysToMaturity">45</div>
+                        <div class="stat-value">45</div>
                         <div class="stat-label">Days to Maturity</div>
                         <div class="stat-change">
                             Active investment
@@ -860,49 +813,29 @@
                     </div>
                 </div>
 
-                <!-- Charts & Market Data -->
-                <div class="charts-section">
-                    <div class="premium-card">
-                        <h3 style="margin-bottom: 1.5rem;">Portfolio Performance</h3>
-                        <div class="chart-container">
-                            <canvas id="performanceChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="premium-card">
-                        <h3 style="margin-bottom: 1.5rem;">Live Market</h3>
-                        <div class="stock-widget">
-                            <div class="stock-list" id="liveMarketData">
-                                <!-- Live market data will be loaded here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
                 <div class="quick-actions">
-                    <a href="#transactions" class="action-btn" data-page="transactions">
+                    <a class="action-btn" data-page="transactions">
                         <div class="action-icon">
                             <i class="fas fa-exchange-alt"></i>
                         </div>
                         <div class="action-title">View Transactions</div>
                         <div class="action-description">Complete history</div>
                     </a>
-                    <a href="#beneficiary" class="action-btn" data-page="beneficiary">
+                    <a class="action-btn" data-page="beneficiary">
                         <div class="action-icon">
                             <i class="fas fa-university"></i>
                         </div>
                         <div class="action-title">Manage Beneficiary</div>
                         <div class="action-description">Bank details</div>
                     </a>
-                    <a href="#performance" class="action-btn" data-page="performance">
+                    <a class="action-btn" data-page="performance">
                         <div class="action-icon">
                             <i class="fas fa-chart-bar"></i>
                         </div>
                         <div class="action-title">Performance</div>
                         <div class="action-description">Analytics & reports</div>
                     </a>
-                    <a href="#partners" class="action-btn" data-page="partners">
+                    <a class="action-btn" data-page="partners">
                         <div class="action-icon">
                             <i class="fas fa-handshake"></i>
                         </div>
@@ -911,39 +844,99 @@
                     </a>
                 </div>
 
-                <!-- Recent Activity -->
-                <div class="premium-card">
-                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3>Recent Activity</h3>
-                        <a href="#transactions" class="btn btn-secondary btn-sm" data-page="transactions">
-                            View All
-                        </a>
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Recent Activity</h3>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon profit">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Daily Profit</div>
+                                <div class="activity-description">Portfolio growth - Technology sector</div>
+                            </div>
+                            <div class="activity-amount positive">+$375</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon profit">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Dividend Payment</div>
+                                <div class="activity-description">MTN Ghana dividend distribution</div>
+                            </div>
+                            <div class="activity-amount positive">+$1,250</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon deposit">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Investment Top-up</div>
+                                <div class="activity-description">Additional capital injection</div>
+                            </div>
+                            <div class="activity-amount positive">+$50,000</div>
+                        </div>
                     </div>
-                    <div class="activity-list" id="recentActivity">
-                        <!-- Activity will be loaded here -->
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Live Market Data</h3>
+                    <div class="stock-widget">
+                        <div class="stock-list">
+                            <div class="stock-item">
+                                <div class="stock-info">
+                                    <div class="stock-symbol">AAPL</div>
+                                    <div class="stock-name">Apple Inc.</div>
+                                </div>
+                                <div class="stock-price">
+                                    <div class="price">$182.63</div>
+                                    <div class="change positive">+1.25 (0.69%)</div>
+                                </div>
+                            </div>
+                            <div class="stock-item">
+                                <div class="stock-info">
+                                    <div class="stock-symbol">GOOGL</div>
+                                    <div class="stock-name">Alphabet Inc.</div>
+                                </div>
+                                <div class="stock-price">
+                                    <div class="price">$138.21</div>
+                                    <div class="change positive">+0.89 (0.65%)</div>
+                                </div>
+                            </div>
+                            <div class="stock-item">
+                                <div class="stock-info">
+                                    <div class="stock-symbol">MSFT</div>
+                                    <div class="stock-name">Microsoft Corp.</div>
+                                </div>
+                                <div class="stock-price">
+                                    <div class="price">$407.59</div>
+                                    <div class="change positive">+2.34 (0.58%)</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Transactions Page -->
-            <div class="page-content" id="transactions-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Transaction History</h2>
-                    
-                    <div class="filter-options" style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
-                        <select class="form-select" style="flex: 1; min-width: 200px;" id="transactionType">
-                            <option value="all">All Transactions</option>
-                            <option value="deposit">Deposits</option>
-                            <option value="profit">Profit Returns</option>
-                            <option value="withdrawal">Withdrawals</option>
+            <div id="transactions-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Transaction History</h2>
+                
+                <div class="card">
+                    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                        <select class="form-select" style="flex: 1; min-width: 200px;">
+                            <option>All Transactions</option>
+                            <option>Deposits</option>
+                            <option>Profits</option>
+                            <option>Withdrawals</option>
                         </select>
-                        <select class="form-select" style="flex: 1; min-width: 200px;" id="transactionPeriod">
-                            <option value="all">All Time</option>
-                            <option value="7d">Last 7 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                            <option value="90d">Last 90 Days</option>
+                        <select class="form-select" style="flex: 1; min-width: 200px;">
+                            <option>All Time</option>
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
                         </select>
-                        <button class="btn btn-primary" onclick="applyTransactionFilters()">
+                        <button class="btn btn-primary">
                             <i class="fas fa-filter"></i> Apply Filters
                         </button>
                     </div>
@@ -956,7 +949,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Date & Time</th>
+                                        <th>Date</th>
                                         <th>Type</th>
                                         <th>Description</th>
                                         <th>Amount</th>
@@ -964,8 +957,31 @@
                                         <th>Reference</th>
                                     </tr>
                                 </thead>
-                                <tbody id="transactionsTable">
-                                    <!-- Transactions will be loaded here -->
+                                <tbody>
+                                    <tr>
+                                        <td>Mar 20, 2024</td>
+                                        <td>Profit</td>
+                                        <td>Daily investment return</td>
+                                        <td style="color: var(--success); font-weight: 600;">+$375</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                        <td>PROF-001234</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mar 19, 2024</td>
+                                        <td>Profit</td>
+                                        <td>MTN Ghana dividend</td>
+                                        <td style="color: var(--success); font-weight: 600;">+$1,250</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                        <td>DIV-005678</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mar 18, 2024</td>
+                                        <td>Deposit</td>
+                                        <td>Additional investment</td>
+                                        <td style="color: var(--success); font-weight: 600;">+$50,000</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                        <td>DEP-003421</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -974,124 +990,102 @@
             </div>
 
             <!-- Beneficiary Page -->
-            <div class="page-content" id="beneficiary-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Beneficiary Management</h2>
-                    
-                    <!-- Current Beneficiary -->
-                    <div class="premium-card" style="margin-bottom: 2rem;">
-                        <h3 style="margin-bottom: 1.5rem;">Current Beneficiary Details</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Bank Name</label>
-                                <div class="account-masked">Standard Chartered Bank</div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Account Name</label>
-                                <div class="account-masked">John Doe</div>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Account Number</label>
-                                <div class="account-masked">•••• •••• 1234</div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Routing Number</label>
-                                <div class="account-masked">•••• •••• 5678</div>
-                            </div>
+            <div id="beneficiary-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Beneficiary Management</h2>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">Current Beneficiary Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Bank Name</label>
+                            <div class="account-masked">Standard Chartered Bank</div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Last Updated</label>
-                            <div>March 15, 2024</div>
+                            <label class="form-label">Account Name</label>
+                            <div class="account-masked">John Doe</div>
                         </div>
                     </div>
-
-                    <!-- Update Beneficiary Button -->
-                    <div class="text-center">
-                        <button class="btn btn-primary" onclick="showUpdateBeneficiary()">
-                            <i class="fas fa-edit"></i> Update Beneficiary Details
-                        </button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Account Number</label>
+                            <div class="account-masked">•••• •••• 1234</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Routing Number</label>
+                            <div class="account-masked">•••• •••• 5678</div>
+                        </div>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Updated</label>
+                        <div>March 15, 2024</div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-primary" onclick="showUpdateBeneficiary()">
+                        <i class="fas fa-edit"></i> Update Beneficiary Details
+                    </button>
                 </div>
             </div>
 
-            <!-- Update Beneficiary Form Page -->
-            <div class="page-content" id="update-beneficiary-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Update Beneficiary Information</h2>
-                    <p style="color: var(--text-light); margin-bottom: 2rem;">
-                        Please provide complete and accurate beneficiary information. All updates require verification and will be confirmed by our agents.
-                    </p>
-
+            <!-- Update Beneficiary Page -->
+            <div id="update-beneficiary-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Update Beneficiary Information</h2>
+                
+                <div class="card">
                     <form id="beneficiaryForm">
-                        <h3 style="margin-bottom: 1.5rem; color: var(--primary-blue);">Personal Information</h3>
+                        <h3 style="margin-bottom: 1.5rem;">Personal Information</h3>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Full Name *</label>
-                                <input type="text" class="form-input" id="beneficiaryName" required>
+                                <input type="text" class="form-input" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Phone Number *</label>
-                                <input type="tel" class="form-input" id="beneficiaryPhone" required>
+                                <input type="tel" class="form-input" required>
                             </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Residential Address *</label>
-                            <textarea class="form-input" id="beneficiaryAddress" rows="3" required></textarea>
+                            <textarea class="form-input" rows="3" required></textarea>
                         </div>
 
-                        <h3 style="margin-bottom: 1.5rem; color: var(--primary-blue); margin-top: 2rem;">Bank Account Details</h3>
+                        <h3 style="margin-bottom: 1.5rem; margin-top: 2rem;">Bank Account Details</h3>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Bank Name *</label>
-                                <select class="form-select" id="bankName" required>
+                                <select class="form-select" required>
                                     <option value="">Select Bank</option>
-                                    <option value="Standard Chartered">Standard Chartered Bank</option>
-                                    <option value="GCB Bank">GCB Bank</option>
-                                    <option value="Ecobank">Ecobank Ghana</option>
-                                    <option value="Barclays">Barclays Bank</option>
-                                    <option value="Stanbic">Stanbic Bank</option>
-                                    <option value="Fidelity">Fidelity Bank</option>
-                                    <option value="Cal Bank">Cal Bank</option>
-                                    <option value="Republic Bank">Republic Bank</option>
-                                    <option value="Zenith Bank">Zenith Bank</option>
-                                    <option value="Access Bank">Access Bank</option>
+                                    <option>Standard Chartered Bank</option>
+                                    <option>GCB Bank</option>
+                                    <option>Ecobank Ghana</option>
+                                    <option>Barclays Bank</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Account Name *</label>
-                                <input type="text" class="form-input" id="accountName" required>
+                                <input type="text" class="form-input" required>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Account Number *</label>
-                                <input type="text" class="form-input" id="accountNumber" required maxlength="20">
+                                <input type="text" class="form-input" required maxlength="20">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Routing Number *</label>
-                                <input type="text" class="form-input" id="routingNumber" required>
+                                <input type="text" class="form-input" required>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">Reason for Update *</label>
-                            <textarea class="form-input" id="updateReason" rows="3" required placeholder="Please explain why you are updating the beneficiary information..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <div style="display: flex; align-items: flex-start; gap: 1rem;">
-                                <input type="checkbox" id="termsAgreement" required style="margin-top: 0.25rem;">
-                                <label for="termsAgreement" style="font-size: 0.9rem; color: var(--text-light);">
-                                    I confirm that all information provided is accurate and complete. I understand that this update requires verification and our agent will contact me to confirm the changes.
-                                </label>
-                            </div>
+                            <textarea class="form-input" rows="3" required></textarea>
                         </div>
 
                         <div class="form-actions">
                             <button type="button" class="btn btn-secondary" onclick="goBackToBeneficiary()">Cancel</button>
-                            <button type="submit" class="btn btn-primary" id="submitBeneficiaryBtn">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-paper-plane"></i> Submit for Verification
                             </button>
                         </div>
@@ -1099,225 +1093,146 @@
                 </div>
             </div>
 
-            <!-- Investment Partners Page -->
-            <div class="page-content" id="partners-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Our Investment Partners</h2>
-                    <p style="color: var(--text-light); margin-bottom: 2rem;">
-                        GGIC strategically partners with 20+ leading companies across multiple sectors to deliver optimal returns.
-                    </p>
-
-                    <div class="partner-grid" id="partnersGrid">
-                        <!-- Partners will be loaded here -->
+            <!-- Partners Page -->
+            <div id="partners-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Investment Partners</h2>
+                
+                <div class="partner-grid">
+                    <div class="partner-card">
+                        <div class="partner-header">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="partner-logo">MTN</div>
+                                <h4 style="margin: 0;">MTN Ghana</h4>
+                            </div>
+                            <span class="sector-badge telecom">Telecom</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600; color: var(--primary-blue);">$25M</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">GGIC Investment</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600; color: var(--success);">+18.5%</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">YTD Performance</div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-light); font-size: 0.9rem;">
+                            Leading telecommunications company in Ghana with nationwide coverage and innovative digital solutions.
+                        </p>
                     </div>
+
+                    <div class="partner-card">
+                        <div class="partner-header">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="partner-logo">GCB</div>
+                                <h4 style="margin: 0;">GCB Bank</h4>
+                            </div>
+                            <span class="sector-badge banking">Banking</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600; color: var(--primary-blue);">$18M</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">GGIC Investment</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-weight: 600; color: var(--success);">+12.3%</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">YTD Performance</div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-light); font-size: 0.9rem;">
+                            Premier banking institution with extensive branch network and comprehensive financial services.
+                        </p>
+                    </div>
+
+                    <!-- Add more partner cards as needed -->
                 </div>
             </div>
 
             <!-- Performance Page -->
-            <div class="page-content" id="performance-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Investment Performance</h2>
-                    
-                    <div class="charts-section">
-                        <div class="premium-card">
-                            <h3 style="margin-bottom: 1.5rem;">Portfolio Growth</h3>
-                            <div class="chart-container">
-                                <canvas id="growthChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="premium-card">
-                            <h3 style="margin-bottom: 1.5rem;">Sector Allocation</h3>
-                            <div class="chart-container">
-                                <canvas id="allocationChart"></canvas>
-                            </div>
-                        </div>
+            <div id="performance-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Investment Performance</h2>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Portfolio Growth</h3>
+                    <div style="height: 300px; background: #f8fafc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                        Performance Chart Will Appear Here
                     </div>
+                </div>
 
-                    <div class="premium-card">
-                        <h3 style="margin-bottom: 1.5rem;">Performance Metrics</h3>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-value">25.8%</div>
-                                <div class="stat-label">Total Return</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">12.4%</div>
-                                <div class="stat-label">Annualized Return</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">8.2%</div>
-                                <div class="stat-label">Average Monthly</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">1.2%</div>
-                                <div class="stat-label">Volatility</div>
-                            </div>
-                        </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">25.8%</div>
+                        <div class="stat-label">Total Return</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">12.4%</div>
+                        <div class="stat-label">Annualized Return</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">8.2%</div>
+                        <div class="stat-label">Average Monthly</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">1.2%</div>
+                        <div class="stat-label">Volatility</div>
                     </div>
                 </div>
             </div>
 
             <!-- Settings Page -->
-            <div class="page-content" id="settings-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Account Settings</h2>
-                    
-                    <!-- Profile Information -->
-                    <div class="premium-card" style="margin-bottom: 2rem;">
-                        <h3 style="margin-bottom: 1.5rem;">Profile Information</h3>
-                        <div class="profile-header" style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;">
-                            <div class="user-avatar" style="width: 80px; height: 80px; position: relative;">
-                                <img id="profileAvatarImage" style="display: none; width: 100%; height: 100%; border-radius: 50%;">
-                                <span id="profileAvatarInitials" style="font-size: 1.5rem;">JD</span>
-                                <div class="avatar-upload" style="position: absolute; bottom: 0; right: 0; background: var(--primary-blue); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                    <i class="fas fa-camera"></i>
-                                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
-                                </div>
-                            </div>
-                            <div>
-                                <h4 id="profileName">John Doe</h4>
-                                <p style="color: var(--text-light);">Premium Investor Member</p>
-                                <p style="color: var(--text-light); font-size: 0.9rem;">Member since January 2024</p>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" class="form-input" value="John Doe" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Social Security Number</label>
-                                <div class="account-masked">••• •• 1234</div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Date of Birth</label>
-                                <input type="text" class="form-input" value="March 15, 1985" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Nationality</label>
-                                <input type="text" class="form-input" value="Ghanaian" readonly>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Email Address</label>
-                                <div style="display: flex; gap: 1rem;">
-                                    <input type="email" class="form-input" value="john.doe@example.com" readonly style="flex: 1;">
-                                    <button type="button" class="btn btn-secondary">Change</button>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone Number</label>
-                                <div style="display: flex; gap: 1rem;">
-                                    <input type="tel" class="form-input" value="+233 24 123 4567" readonly style="flex: 1;">
-                                    <button type="button" class="btn btn-secondary">Change</button>
-                                </div>
-                            </div>
-                        </div>
-
+            <div id="settings-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Account Settings</h2>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">Profile Information</h3>
+                    <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Residential Address</label>
-                            <textarea class="form-input" rows="2" readonly>123 Investment Avenue, Airport Residential Area, Accra, Ghana</textarea>
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" value="John Doe" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Social Security Number</label>
+                            <div class="account-masked">••• •• 1234</div>
                         </div>
                     </div>
-
-                    <!-- Notification Preferences -->
-                    <div class="premium-card">
-                        <h3 style="margin-bottom: 1.5rem;">Notification Preferences</h3>
-                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                                <div>
-                                    <div style="font-weight: 600;">Email Notifications</div>
-                                    <div style="font-size: 0.9rem; color: var(--text-light);">Receive updates via email</div>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                                <div>
-                                    <div style="font-weight: 600;">SMS Alerts</div>
-                                    <div style="font-size: 0.9rem; color: var(--text-light);">Important updates via SMS</div>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
-                                <div>
-                                    <div style="font-weight: 600;">Investment Reports</div>
-                                    <div style="font-size: 0.9rem; color: var(--text-light);">Weekly performance reports</div>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="text" class="form-input" value="March 15, 1985" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nationality</label>
+                            <input type="text" class="form-input" value="Ghanaian" readonly>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Security Page -->
-            <div class="page-content" id="security-page">
-                <div class="form-section">
-                    <h2 style="margin-bottom: 2rem;">Security Settings</h2>
-                    
-                    <div class="premium-card" style="margin-bottom: 2rem;">
-                        <h3 style="margin-bottom: 1.5rem;">Password & Authentication</h3>
-                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
-                                <div>
-                                    <div style="font-weight: 600;">Password</div>
-                                    <div style="font-size: 0.9rem; color: var(--text-light);">Last changed: 2 months ago</div>
-                                </div>
-                                <button class="btn btn-primary" onclick="changePassword()">
-                                    <i class="fas fa-key"></i> Change Password
-                                </button>
+            <div id="security-page" class="page">
+                <h2 style="margin-bottom: 2rem;">Security Settings</h2>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">Password & Authentication</h3>
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
+                            <div>
+                                <div style="font-weight: 600;">Password</div>
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Last changed: 2 months ago</div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
-                                <div>
-                                    <div style="font-weight: 600;">Two-Factor Authentication</div>
-                                    <div style="font-size: 0.9rem; color: var(--text-light);">Enhanced security for your account</div>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-key"></i> Change Password
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="premium-card">
-                        <h3 style="margin-bottom: 1.5rem;">Login Activity</h3>
-                        <div class="activity-list">
-                            <div class="activity-item">
-                                <div class="activity-icon" style="background: var(--success);">
-                                    <i class="fas fa-laptop"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <div class="activity-title">Successful Login</div>
-                                    <div class="activity-description">Chrome on Windows • Accra, Ghana</div>
-                                    <div class="activity-date">Today, 10:30 AM</div>
-                                </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
+                            <div>
+                                <div style="font-weight: 600;">Two-Factor Authentication</div>
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Enhanced security for your account</div>
                             </div>
-                            <div class="activity-item">
-                                <div class="activity-icon" style="background: var(--warning);">
-                                    <i class="fas fa-mobile-alt"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <div class="activity-title">Mobile Login</div>
-                                    <div class="activity-description">Safari on iOS • Kumasi, Ghana</div>
-                                    <div class="activity-date">Yesterday, 3:45 PM</div>
-                                </div>
-                            </div>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider round"></span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -1326,11 +1241,9 @@
     </div>
 
     <!-- Success Modal -->
-    <div class="modal-overlay" id="successModal">
-        <div class="modal-content" style="text-align: center;">
-            <div class="feature-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
+    <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 2rem; border-radius: 16px; text-align: center; max-width: 400px; margin: 2rem;">
+            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;"></i>
             <h2 style="margin-bottom: 1rem; color: var(--success);">Successfully Submitted!</h2>
             <p style="margin-bottom: 2rem; color: var(--text-light);">
                 Your beneficiary update request has been submitted successfully. Our agent will contact you within 24 hours to verify and approve the changes.
@@ -1341,10 +1254,169 @@
         </div>
     </div>
 
-    <!-- File Upload Input -->
-    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+    <script>
+        // Simple Page Navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup navigation
+            setupNavigation();
+            
+            // Setup mobile menu
+            setupMobileMenu();
+        });
 
-    <script src="js/firebase-config.js" type="module"></script>
-    <script src="js/premium-dashboard.js" type="module"></script>
+        function setupNavigation() {
+            const navItems = document.querySelectorAll('.nav-item[data-page], .action-btn[data-page]');
+            const pages = document.querySelectorAll('.page');
+            
+            function showPage(pageId) {
+                // Hide all pages
+                pages.forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Show target page
+                const targetPage = document.getElementById(pageId + '-page');
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                    
+                    // Update page title
+                    document.getElementById('pageTitle').textContent = getPageTitle(pageId);
+                    
+                    // Update active nav state
+                    updateActiveNav(pageId);
+                    
+                    // Close mobile menu if open
+                    document.querySelector('.sidebar').classList.remove('mobile-open');
+                }
+            }
+
+            function updateActiveNav(pageId) {
+                // Remove active class from all nav items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to current page
+                const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+                if (activeNav) {
+                    activeNav.classList.add('active');
+                }
+            }
+
+            function getPageTitle(pageId) {
+                const titles = {
+                    'overview': 'Portfolio Overview',
+                    'transactions': 'Transaction History',
+                    'beneficiary': 'Beneficiary Management',
+                    'update-beneficiary': 'Update Beneficiary',
+                    'partners': 'Investment Partners',
+                    'performance': 'Performance Analytics',
+                    'settings': 'Account Settings',
+                    'security': 'Security Settings'
+                };
+                return titles[pageId] || 'GGIC Dashboard';
+            }
+
+            // Add click event listeners
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Logout button
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to logout?')) {
+                    window.location.href = 'login.html';
+                }
+            });
+
+            // Beneficiary form submission
+            document.getElementById('beneficiaryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                document.getElementById('successModal').style.display = 'flex';
+            });
+        }
+
+        function setupMobileMenu() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.querySelector('.sidebar');
+
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+            });
+        }
+
+        // Global functions for beneficiary management
+        window.showUpdateBeneficiary = function() {
+            showPage('update-beneficiary');
+        };
+
+        window.goBackToBeneficiary = function() {
+            showPage('beneficiary');
+        };
+
+        window.closeSuccessModal = function() {
+            document.getElementById('successModal').style.display = 'none';
+            showPage('beneficiary');
+        };
+
+        // Switch styles
+        const switchStyles = document.createElement('style');
+        switchStyles.textContent = `
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 50px;
+                height: 24px;
+            }
+            
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+            }
+            
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+            }
+            
+            input:checked + .slider {
+                background-color: var(--success);
+            }
+            
+            input:checked + .slider:before {
+                transform: translateX(26px);
+            }
+            
+            .slider.round {
+                border-radius: 24px;
+            }
+            
+            .slider.round:before {
+                border-radius: 50%;
+            }
+        `;
+        document.head.appendChild(switchStyles);
+    </script>
 </body>
 </html>
