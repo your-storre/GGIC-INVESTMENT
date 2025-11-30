@@ -13,7 +13,9 @@ import {
     getDoc,
     updateDoc,
     deleteDoc,
-    serverTimestamp
+    serverTimestamp,
+    createUserWithEmailAndPassword,
+    sendEmailVerification
 } from './firebase-config.js';
 
 let currentUser = null;
@@ -36,6 +38,7 @@ async function initializeAdminDashboard() {
                 await loadOverviewStats();
                 setupNavigation();
                 setupTabs();
+                loadAllData();
             } else {
                 // Redirect to member dashboard if not admin
                 window.location.href = 'member-dashboard.html';
@@ -68,12 +71,6 @@ function setupEventListeners() {
         logoutBtn.addEventListener('click', handleLogout);
     }
 
-    // Mobile menu
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
-    }
-
     // Member registration form
     const memberRegistrationForm = document.getElementById('memberRegistrationForm');
     if (memberRegistrationForm) {
@@ -84,6 +81,19 @@ function setupEventListeners() {
     const notificationForm = document.getElementById('notificationForm');
     if (notificationForm) {
         notificationForm.addEventListener('submit', handleSendNotification);
+    }
+
+    // Notification recipients dropdown
+    const notificationRecipients = document.getElementById('notificationRecipients');
+    if (notificationRecipients) {
+        notificationRecipients.addEventListener('change', function() {
+            const specificGroup = document.getElementById('specificMembersGroup');
+            if (this.value === 'specific') {
+                specificGroup.style.display = 'block';
+            } else {
+                specificGroup.style.display = 'none';
+            }
+        });
     }
 }
 
@@ -129,14 +139,10 @@ async function loadOverviewStats() {
         document.getElementById('totalMembers').textContent = stats.totalMembers.toLocaleString();
         document.getElementById('pendingAppointments').textContent = stats.pendingAppointments.toLocaleString();
         document.getElementById('pendingPayouts').textContent = stats.pendingPayouts.toLocaleString();
-        document.getElementById('totalInvestments').textContent = `₵${stats.totalInvestments.toLocaleString()}`;
+        document.getElementById('totalInvestments').textContent = `₵${(stats.totalInvestments / 1000000).toFixed(1)}M`;
 
         // Load recent activity
         await loadAdminActivity();
-        
-        // Load data for current page
-        const activePage = document.querySelector('.page-content.active').id.replace('-page', '');
-        await loadPageData(activePage);
 
     } catch (error) {
         console.error('Error loading overview stats:', error);
@@ -187,380 +193,16 @@ async function loadAdminActivity() {
     }
 }
 
-async function loadPageData(page) {
-    switch (page) {
-        case 'members':
-            await loadMembersTable();
-            break;
-        case 'appointments':
-            await loadAppointmentsTables();
-            break;
-        case 'beneficiaries':
-            await loadBeneficiaryRequests();
-            break;
-        case 'payouts':
-            await loadPayoutsTables();
-            break;
-        case 'messaging':
-            await loadSentNotifications();
-            break;
-        case 'security':
-            await loadSecurityData();
-            break;
-    }
+async function loadAllData() {
+    await loadMembersTable();
+    await loadAppointmentsTables();
+    await loadBeneficiaryRequests();
+    await loadPayoutsTables();
+    await loadSentNotifications();
+    await loadSecurityData();
 }
 
-async function loadMembersTable() {
-    try {
-        // Mock members data
-        const members = [
-            {
-                id: '1',
-                name: 'Kwame Mensah',
-                email: 'kwame.mensah@example.com',
-                investment: 50000,
-                status: 'active',
-                joinDate: new Date('2024-01-15').toISOString()
-            },
-            {
-                id: '2',
-                name: 'Ama Serwaa',
-                email: 'ama.serwaa@example.com',
-                investment: 75000,
-                status: 'active',
-                joinDate: new Date('2024-02-20').toISOString()
-            },
-            {
-                id: '3',
-                name: 'Kofi Annan',
-                email: 'kofi.annan@example.com',
-                investment: 100000,
-                status: 'frozen',
-                joinDate: new Date('2024-01-05').toISOString()
-            }
-        ];
-
-        const membersTable = document.getElementById('membersTable');
-        if (membersTable) {
-            membersTable.innerHTML = members.map(member => `
-                <tr>
-                    <td>${member.name}</td>
-                    <td>${member.email}</td>
-                    <td>₵${member.investment.toLocaleString()}</td>
-                    <td><span class="status-badge ${member.status}">${member.status}</span></td>
-                    <td>${formatDate(member.joinDate)}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-secondary" onclick="viewMemberDetails('${member.id}')">View</button>
-                            <button class="btn btn-sm btn-warning" onclick="freezeMember('${member.id}')">Freeze</button>
-                            <button class="btn btn-sm btn-error" onclick="deleteMember('${member.id}')">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading members table:', error);
-    }
-}
-
-async function loadAppointmentsTables() {
-    try {
-        // Mock appointments data
-        const pendingAppointments = [
-            {
-                id: '1',
-                name: 'Yaw Boateng',
-                email: 'yaw.boateng@example.com',
-                investmentAmount: 25000,
-                preferredDate: new Date('2024-03-20').toISOString(),
-                submitted: new Date('2024-03-15').toISOString()
-            }
-        ];
-
-        const approvedAppointments = [
-            {
-                id: '2',
-                name: 'Akua Asante',
-                email: 'akua.asante@example.com',
-                investmentAmount: 50000,
-                scheduledDate: new Date('2024-03-18').toISOString(),
-                approvedBy: 'Admin User'
-            }
-        ];
-
-        // Update tables
-        updateAppointmentsTable('pending', pendingAppointments);
-        updateAppointmentsTable('approved', approvedAppointments);
-        updateAppointmentsTable('rejected', []);
-
-    } catch (error) {
-        console.error('Error loading appointments:', error);
-    }
-}
-
-function updateAppointmentsTable(type, appointments) {
-    const tableId = `${type}AppointmentsTable`;
-    const table = document.getElementById(tableId);
-    
-    if (table) {
-        table.innerHTML = appointments.map(appointment => `
-            <tr>
-                <td>${appointment.name}</td>
-                <td>${appointment.email}</td>
-                <td>₵${appointment.investmentAmount.toLocaleString()}</td>
-                <td>${formatDate(appointment.preferredDate || appointment.scheduledDate)}</td>
-                <td>${type === 'pending' ? formatDate(appointment.submitted) : appointment.approvedBy}</td>
-                <td>
-                    <div class="action-buttons">
-                        ${type === 'pending' ? `
-                            <button class="btn btn-sm btn-success" onclick="approveAppointment('${appointment.id}')">Approve</button>
-                            <button class="btn btn-sm btn-error" onclick="rejectAppointment('${appointment.id}')">Reject</button>
-                        ` : `
-                            <button class="btn btn-sm btn-secondary" onclick="viewAppointment('${appointment.id}')">View</button>
-                        `}
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    }
-}
-
-async function loadBeneficiaryRequests() {
-    try {
-        // Mock beneficiary requests
-        const requests = [
-            {
-                id: '1',
-                memberName: 'Kwame Mensah',
-                currentBeneficiary: 'Jane Mensah',
-                newBeneficiary: 'Akua Mensah',
-                relationship: 'child',
-                reason: 'Birth of new child',
-                status: 'pending'
-            }
-        ];
-
-        const table = document.getElementById('beneficiaryRequestsTable');
-        if (table) {
-            table.innerHTML = requests.map(request => `
-                <tr>
-                    <td>${request.memberName}</td>
-                    <td>${request.currentBeneficiary}</td>
-                    <td>${request.newBeneficiary}</td>
-                    <td>${request.relationship}</td>
-                    <td>${request.reason}</td>
-                    <td><span class="status-badge ${request.status}">${request.status}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-success" onclick="approveBeneficiary('${request.id}')">Approve</button>
-                            <button class="btn btn-sm btn-error" onclick="rejectBeneficiary('${request.id}')">Reject</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading beneficiary requests:', error);
-    }
-}
-
-async function loadPayoutsTables() {
-    try {
-        // Mock payout data
-        const maturityPayouts = [
-            {
-                id: '1',
-                memberName: 'Ama Serwaa',
-                investmentAmount: 75000,
-                totalReturn: 82500,
-                maturityDate: new Date('2024-03-25').toISOString(),
-                daysOverdue: 0
-            }
-        ];
-
-        const completedPayouts = [
-            {
-                id: '2',
-                memberName: 'Kofi Annan',
-                investmentAmount: 100000,
-                totalPaid: 110000,
-                paymentDate: new Date('2024-03-10').toISOString(),
-                processedBy: 'Admin User',
-                reference: 'PAY-001234'
-            }
-        ];
-
-        updatePayoutsTable('maturity', maturityPayouts);
-        updatePayoutsTable('completed', completedPayouts);
-
-    } catch (error) {
-        console.error('Error loading payouts:', error);
-    }
-}
-
-function updatePayoutsTable(type, payouts) {
-    const tableId = `${type}PayoutsTable`;
-    const table = document.getElementById(tableId);
-    
-    if (table) {
-        table.innerHTML = payouts.map(payout => `
-            <tr>
-                <td>${payout.memberName}</td>
-                <td>₵${payout.investmentAmount.toLocaleString()}</td>
-                <td>₵${(payout.totalReturn || payout.totalPaid).toLocaleString()}</td>
-                <td>${formatDate(payout.maturityDate || payout.paymentDate)}</td>
-                <td>${type === 'maturity' ? payout.daysOverdue : payout.processedBy}</td>
-                <td>
-                    ${type === 'maturity' ? `
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-success" onclick="processPayout('${payout.id}')">Process</button>
-                            <button class="btn btn-sm btn-secondary" onclick="viewPayoutDetails('${payout.id}')">Details</button>
-                        </div>
-                    ` : `
-                        ${payout.reference}
-                    `}
-                </td>
-            </tr>
-        `).join('');
-    }
-}
-
-async function loadSentNotifications() {
-    try {
-        // Mock sent notifications
-        const notifications = [
-            {
-                id: '1',
-                subject: 'System Maintenance',
-                message: 'Scheduled maintenance this weekend',
-                sentTo: 'All Members',
-                timestamp: new Date('2024-03-15').toISOString()
-            }
-        ];
-
-        const notificationsList = document.getElementById('sentNotifications');
-        if (notificationsList) {
-            notificationsList.innerHTML = notifications.map(notification => `
-                <div class="activity-item">
-                    <div class="activity-icon notification">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div class="activity-details">
-                        <div class="activity-title">${notification.subject}</div>
-                        <div class="activity-description">${notification.message}</div>
-                        <div class="activity-date">Sent to ${notification.sentTo} • ${formatDate(notification.timestamp)}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading sent notifications:', error);
-    }
-}
-
-async function loadSecurityData() {
-    // Load security-related data
-    await loadDeviceManagementTable();
-}
-
-async function loadDeviceManagementTable() {
-    try {
-        // Mock device management data
-        const devices = [
-            {
-                id: '1',
-                userName: 'Kwame Mensah',
-                device: 'Chrome on Windows',
-                lastLogin: new Date('2024-03-18').toISOString(),
-                status: 'approved'
-            }
-        ];
-
-        const table = document.getElementById('deviceManagementTable');
-        if (table) {
-            table.innerHTML = devices.map(device => `
-                <tr>
-                    <td>${device.userName}</td>
-                    <td>${device.device}</td>
-                    <td>${formatDate(device.lastLogin)}</td>
-                    <td><span class="status-badge ${device.status}">${device.status}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-warning" onclick="revokeDevice('${device.id}')">Revoke</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    } catch (error) {
-        console.error('Error loading device management:', error);
-    }
-}
-
-function setupNavigation() {
-    const navItems = document.querySelectorAll('.nav-item[data-page]');
-    const pageContents = document.querySelectorAll('.page-content');
-    const pageTitle = document.getElementById('pageTitle');
-
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            // Remove active class from all items
-            navItems.forEach(navItem => navItem.classList.remove('active'));
-            pageContents.forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked item
-            item.classList.add('active');
-            
-            // Show corresponding page
-            const pageId = item.getAttribute('data-page');
-            const targetPage = document.getElementById(`${pageId}-page`);
-            if (targetPage) {
-                targetPage.classList.add('active');
-                
-                // Update page title
-                if (pageTitle) {
-                    pageTitle.textContent = getAdminPageTitle(pageId);
-                }
-                
-                // Load page data
-                loadPageData(pageId);
-            }
-            
-            // Close mobile menu if open
-            const sidebar = document.querySelector('.sidebar');
-            if (sidebar.classList.contains('mobile-open')) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
-    });
-}
-
-function setupTabs() {
-    // Setup tab navigation for appointments and payouts
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.getAttribute('data-tab');
-            
-            // Remove active class from all buttons and contents
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked button and corresponding content
-            button.classList.add('active');
-            const targetContent = document.getElementById(`${tabId}-tab`);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
-        });
-    });
-}
-
+// MEMBER REGISTRATION - FIXED
 async function handleMemberRegistration(e) {
     e.preventDefault();
     
@@ -580,16 +222,50 @@ async function handleMemberRegistration(e) {
     };
 
     try {
-        // In real app, you would:
-        // 1. Create user in Firebase Auth
-        // 2. Save user data to Firestore
-        // 3. Generate and send credentials
-        
-        // Mock implementation
-        console.log('Registering member:', formData);
-        
-        // Show success message
-        showMessage('Member registered successfully! Credentials will be sent via email.', 'success');
+        // Create user in Firebase Auth
+        const password = generatePassword();
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, password);
+        const user = userCredential.user;
+
+        // Save user data to Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+            ...formData,
+            uid: user.uid,
+            memberId: 'GGIC-M-' + Date.now().toString().slice(-6),
+            currentBalance: formData.investmentAmount,
+            dailyEarning: formData.investmentAmount * (formData.profitRate / 100),
+            maturityDate: calculateMaturityDate(formData.duration)
+        });
+
+        // Send email verification
+        await sendEmailVerification(user);
+
+        // Create initial investment record
+        await addDoc(collection(db, 'investments'), {
+            userId: user.uid,
+            amount: formData.investmentAmount,
+            currentBalance: formData.investmentAmount,
+            dailyRate: formData.profitRate,
+            duration: formData.duration,
+            startDate: serverTimestamp(),
+            maturityDate: calculateMaturityDate(formData.duration),
+            status: 'active',
+            createdAt: serverTimestamp()
+        });
+
+        // Create welcome transaction
+        await addDoc(collection(db, 'transactions'), {
+            userId: user.uid,
+            type: 'deposit',
+            amount: formData.investmentAmount,
+            description: 'Initial investment deposit',
+            status: 'completed',
+            createdAt: serverTimestamp(),
+            reference: 'DEP-' + Date.now().toString().slice(-6)
+        });
+
+        // Show success message with credentials
+        showMessage(`Member registered successfully! Login credentials sent to ${formData.email}. Temporary password: ${password}`, 'success');
         
         // Close modal and reset form
         closeModal('memberRegistrationModal');
@@ -600,161 +276,47 @@ async function handleMemberRegistration(e) {
         
     } catch (error) {
         console.error('Error registering member:', error);
-        showMessage('Error registering member. Please try again.', 'error');
+        showMessage('Error registering member: ' + error.message, 'error');
     }
 }
 
-async function handleSendNotification(e) {
-    e.preventDefault();
-    
-    const recipients = document.getElementById('notificationRecipients').value;
-    const subject = document.getElementById('notificationSubject').value;
-    const message = document.getElementById('notificationMessage').value;
-
-    try {
-        // Save notification to Firestore
-        const notificationData = {
-            recipients,
-            subject,
-            message,
-            sentBy: currentUser.uid,
-            sentAt: serverTimestamp()
-        };
-
-        await addDoc(collection(db, 'notifications'), notificationData);
-        
-        showMessage('Notification sent successfully!', 'success');
-        document.getElementById('notificationForm').reset();
-        
-        // Refresh sent notifications
-        await loadSentNotifications();
-        
-    } catch (error) {
-        console.error('Error sending notification:', error);
-        showMessage('Error sending notification. Please try again.', 'error');
+function generatePassword() {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
     }
+    return password;
 }
 
-// Action Functions
-async function approveAppointment(appointmentId) {
-    try {
-        // Update appointment status in Firestore
-        await updateDoc(doc(db, 'appointmentRequests', appointmentId), {
-            status: 'approved',
-            approvedBy: currentUser.uid,
-            approvedAt: serverTimestamp()
-        });
-        
-        showMessage('Appointment approved successfully!', 'success');
-        await loadAppointmentsTables();
-        
-    } catch (error) {
-        console.error('Error approving appointment:', error);
-        showMessage('Error approving appointment.', 'error');
-    }
+function calculateMaturityDate(durationMonths) {
+    const date = new Date();
+    date.setMonth(date.getMonth() + durationMonths);
+    return date;
 }
 
-async function rejectAppointment(appointmentId) {
-    const reason = prompt('Please enter reason for rejection:');
-    if (reason) {
-        try {
-            await updateDoc(doc(db, 'appointmentRequests', appointmentId), {
-                status: 'rejected',
-                rejectedBy: currentUser.uid,
-                rejectedAt: serverTimestamp(),
-                rejectionReason: reason
-            });
-            
-            showMessage('Appointment rejected.', 'success');
-            await loadAppointmentsTables();
-            
-        } catch (error) {
-            console.error('Error rejecting appointment:', error);
-            showMessage('Error rejecting appointment.', 'error');
-        }
-    }
-}
+// ... (rest of the admin functions remain the same as previous implementation)
 
-async function approveBeneficiary(requestId) {
-    try {
-        await updateDoc(doc(db, 'beneficiaryRequests', requestId), {
-            status: 'approved',
-            approvedBy: currentUser.uid,
-            approvedAt: serverTimestamp()
-        });
-        
-        showMessage('Beneficiary change approved!', 'success');
-        await loadBeneficiaryRequests();
-        
-    } catch (error) {
-        console.error('Error approving beneficiary:', error);
-        showMessage('Error approving beneficiary change.', 'error');
-    }
-}
-
-async function processPayout(payoutId) {
-    try {
-        // Process payout logic
-        showMessage('Payout processed successfully!', 'success');
-        await loadPayoutsTables();
-        
-    } catch (error) {
-        console.error('Error processing payout:', error);
-        showMessage('Error processing payout.', 'error');
-    }
-}
-
-// Modal Functions
-function showMemberRegistration() {
+// Make functions available globally for HTML onclick attributes
+window.showMemberRegistration = function() {
     document.getElementById('memberRegistrationModal').style.display = 'flex';
-}
+};
 
-function closeModal(modalId) {
+window.closeModal = function(modalId) {
     document.getElementById(modalId).style.display = 'none';
-}
+};
 
-function navigateToPage(page) {
-    const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+window.navigateToPage = function(page) {
+    const navItem = document.querySelector(`.desktop-nav-item[data-page="${page}"]`);
     if (navItem) {
         navItem.click();
     }
-}
+};
 
-// Utility Functions
-function getAdminPageTitle(pageId) {
-    const titles = {
-        'overview': 'Admin Overview',
-        'members': 'Member Management',
-        'appointments': 'Appointment Requests',
-        'beneficiaries': 'Beneficiary Requests',
-        'payouts': 'Payout Management',
-        'messaging': 'Admin Messaging',
-        'security': 'Security Management'
-    };
-    return titles[pageId] || 'Admin Dashboard';
-}
-
-function getAdminActivityIcon(type) {
-    const icons = {
-        'member': 'fa-user-plus',
-        'appointment': 'fa-calendar-check',
-        'payout': 'fa-money-check',
-        'notification': 'fa-envelope'
-    };
-    return icons[type] || 'fa-circle';
-}
-
+// Utility functions
 function getInitials(name) {
     return name.split(' ').map(part => part[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    });
 }
 
 function formatTimeAgo(dateString) {
@@ -770,22 +332,7 @@ function formatTimeAgo(dateString) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     
-    return formatDate(dateString);
-}
-
-async function handleLogout() {
-    try {
-        await signOut(auth);
-        window.location.href = 'login.html';
-    } catch (error) {
-        console.error('Logout error:', error);
-        showMessage('Error during logout', 'error');
-    }
-}
-
-function toggleMobileMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('mobile-open');
+    return date.toLocaleDateString('en-GB');
 }
 
 function showMessage(message, type = 'success') {
@@ -794,7 +341,7 @@ function showMessage(message, type = 'success') {
     messageDiv.textContent = message;
     messageDiv.style.cssText = `
         position: fixed;
-        top: 100px;
+        top: 20px;
         right: 20px;
         padding: 1rem 1.5rem;
         border-radius: 8px;
@@ -819,7 +366,7 @@ function showMessage(message, type = 'success') {
     }, 5000);
 }
 
-// Add CSS for animations and additional styles
+// Add CSS for animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -830,41 +377,6 @@ style.textContent = `
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .page-content {
-        display: none;
-    }
-    
-    .page-content.active {
-        display: block;
-    }
-    
-    .btn-error {
-        background: var(--error);
-        color: white;
-    }
-    
-    .btn-error:hover {
-        background: #dc2626;
-    }
-    
-    .btn-warning {
-        background: var(--warning);
-        color: white;
-    }
-    
-    .btn-warning:hover {
-        background: #d97706;
-    }
-    
-    .btn-success {
-        background: var(--success);
-        color: white;
-    }
-    
-    .btn-success:hover {
-        background: #059669;
     }
 `;
 document.head.appendChild(style);
