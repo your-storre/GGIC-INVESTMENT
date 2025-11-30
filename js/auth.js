@@ -4,6 +4,9 @@ import {
     signInWithEmailAndPassword, 
     onAuthStateChanged, 
     signOut,
+    createUserWithEmailAndPassword,
+    sendEmailVerification,
+    updateProfile,
     collection,
     addDoc,
     query,
@@ -11,10 +14,10 @@ import {
     getDocs,
     updateDoc,
     doc,
-    getDoc
+    getDoc,
+    setDoc
 } from './firebase-config.js';
 
-// Authentication state management
 let currentUser = null;
 let twoFACode = null;
 let loginAttemptData = null;
@@ -83,11 +86,12 @@ async function handleLogin(e) {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const loginBtn = document.getElementById('loginBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
     
     try {
         // Show loading state
-        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-        loginBtn.disabled = true;
+        loginBtn.style.display = 'none';
+        loadingIndicator.style.display = 'block';
         
         // Attempt login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -115,15 +119,15 @@ async function handleLogin(e) {
         handleLoginError(error);
     } finally {
         // Reset button state
-        loginBtn.innerHTML = '<i class="fas fa-lock"></i> Secure Login';
-        loginBtn.disabled = false;
+        loginBtn.style.display = 'block';
+        loadingIndicator.style.display = 'none';
     }
 }
 
 async function checkIfNewDevice(user) {
     try {
-        // In a real app, you'd check IP address, user agent, etc.
         // For demo purposes, we'll simulate device checking
+        // In real app, you'd check IP address, user agent, etc.
         const devicesRef = collection(db, 'userDevices');
         const q = query(devicesRef, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
@@ -132,16 +136,12 @@ async function checkIfNewDevice(user) {
             return true; // First time login
         }
         
-        // Check if current device matches any registered devices
-        const currentDeviceId = generateDeviceId();
-        const isKnownDevice = querySnapshot.docs.some(doc => 
-            doc.data().deviceId === currentDeviceId
-        );
+        // For demo, we'll treat every login as known device
+        return false;
         
-        return !isKnownDevice;
     } catch (error) {
         console.error('Device check error:', error);
-        return true; // Default to requiring approval on error
+        return false; // Default to not requiring approval on error
     }
 }
 
@@ -153,29 +153,18 @@ async function initiate2FA(user) {
     // For demo, we'll just show it and log it
     console.log(`2FA Code for ${user.email}: ${twoFACode}`);
     
-    // Simulate sending email
-    await simulateSend2FAEmail(user.email, twoFACode);
-    
     // Show 2FA modal
     show2FAModal();
     startResendTimer();
+    
+    // For demo purposes, auto-fill the code
+    setTimeout(() => {
+        autoFill2FACode(twoFACode);
+    }, 1000);
 }
 
 function generate2FACode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async function simulateSend2FAEmail(email, code) {
-    // In a real implementation, you would use Firebase Extensions or your own email service
-    // For demo purposes, we'll just log it
-    console.log(`Sending 2FA code ${code} to ${email}`);
-    
-    // You would typically use Firebase Cloud Functions to send emails
-    // await fetch('/send-2fa-email', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ email, code })
-    // });
 }
 
 function show2FAModal() {
@@ -236,6 +225,22 @@ function setupCodeInputs() {
             codeInputs[Math.min(pasteData.length - 1, 5)].focus();
         });
     });
+}
+
+function autoFill2FACode(code) {
+    const codeInputs = document.querySelectorAll('.code-input');
+    const codeDigits = code.split('');
+    
+    codeDigits.forEach((digit, index) => {
+        if (codeInputs[index]) {
+            codeInputs[index].value = digit;
+        }
+    });
+    
+    // Focus the last input
+    if (codeInputs[codeDigits.length - 1]) {
+        codeInputs[codeDigits.length - 1].focus();
+    }
 }
 
 function clearCodeInputs() {
@@ -313,7 +318,7 @@ async function registerDevice(user) {
 }
 
 function generateDeviceId() {
-    // Simple device fingerprinting (in real app, use more sophisticated method)
+    // Simple device fingerprinting
     const components = [
         navigator.userAgent,
         navigator.language,
@@ -361,9 +366,8 @@ async function approveNewDevice() {
         approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
         approveBtn.disabled = true;
         
-        // In a real app, you would verify the key against stored hash
-        // For demo, we'll use a simple check
-        const isValidKey = await verifyApprovalKey(loginAttemptData.user.uid, approvalKey);
+        // For demo, accept any key
+        const isValidKey = true;
         
         if (isValidKey) {
             closeNewDeviceModal();
@@ -377,24 +381,6 @@ async function approveNewDevice() {
     } finally {
         approveBtn.innerHTML = 'Approve Device';
         approveBtn.disabled = false;
-    }
-}
-
-async function verifyApprovalKey(userId, key) {
-    try {
-        // In a real app, you would check against a hashed key in Firestore
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            // Demo: Check if key matches a simple pattern
-            return key === userData.approvalKey || key === 'GGIC2024'; // Fallback for demo
-        }
-        
-        return false;
-    } catch (error) {
-        console.error('Key verification error:', error);
-        return false;
     }
 }
 
@@ -463,7 +449,6 @@ async function handleForgotPassword(e) {
         return;
     }
     
-    // In a real app, you would implement password reset
     showMessage('Password reset feature would be implemented here. Please contact support.', 'info');
 }
 
@@ -474,7 +459,7 @@ function showMessage(message, type = 'success') {
     messageDiv.textContent = message;
     messageDiv.style.cssText = `
         position: fixed;
-        top: 100px;
+        top: 20px;
         right: 20px;
         padding: 1rem 1.5rem;
         border-radius: 8px;
