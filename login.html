@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Login - GGIC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .login-hero {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 120px 0 60px;
+            text-align: center;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo .logo {
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .password-toggle {
+            position: relative;
+        }
+
+        .password-toggle .form-input {
+            padding-right: 3rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .forgot-password {
+            color: var(--secondary-blue);
+            text-decoration: none;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .divider span {
+            background: var(--white);
+            padding: 0 1rem;
+            color: var(--text-light);
+        }
+
+        .security-notice {
+            background: #fef3cd;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .security-notice i {
+            color: var(--warning);
+            margin-right: 0.5rem;
+        }
+
+        /* 2FA Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+
+        .code-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .code-input {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .code-input:focus {
+            border-color: var(--secondary-blue);
+            outline: none;
+        }
+
+        .resend-code {
+            color: var(--secondary-blue);
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .resend-code:hover {
+            text-decoration: underline;
+        }
+
+        .timer {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">GGIC</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#about">About Us</a></li>
+                    <li><a href="index.html#partners">Our Partners</a></li>
+                    <li><a href="index.html#how-it-works">How It Works</a></li>
+                    <li><a href="appointment.html">Invest With Us</a></li>
+                </ul>
+                <div class="auth-buttons">
+                    <a href="login.html" class="btn btn-primary">Login</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Login Hero -->
+    <section class="login-hero">
+        <div class="container">
+            <h1>Secure Member Login</h1>
+            <p>Access your investment dashboard and portfolio</p>
+        </div>
+    </section>
+
+    <!-- Login Form -->
+    <section class="section section-light">
+        <div class="container">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-logo">
+                        <div class="logo">GGIC</div>
+                        <h2>Member Portal</h2>
+                    </div>
+
+                    <div class="security-notice">
+                        <i class="fas fa-shield-alt"></i>
+                        <strong>Security Notice:</strong> This is a secure system. All activities are monitored and recorded.
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input type="email" id="email" class="form-input" required placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="password">Password</label>
+                            <div class="password-toggle">
+                                <input type="password" id="password" class="form-input" required placeholder="Enter your password">
+                                <button type="button" class="toggle-password" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="login-options">
+                            <label class="remember-me">
+                                <input type="checkbox" id="rememberMe">
+                                Remember me
+                            </label>
+                            <a href="#" class="forgot-password" id="forgotPassword">Forgot Password?</a>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary login-btn" id="loginBtn">
+                            <i class="fas fa-lock"></i> Secure Login
+                        </button>
+
+                        <div class="divider">
+                            <span>Secure Access</span>
+                        </div>
+
+                        <div class="text-center">
+                            <p>New to GGIC? <a href="appointment.html" style="color: var(--secondary-blue);">Start your investment journey</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <h3>GGIC</h3>
+                    <p>Ghana Growth Investment Co<br>
+                    Building Ghana's Future Through Strategic Investments</p>
+                </div>
+                
+                <div>
+                    <h4>Contact Info</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Airport City, Accra, Ghana</p>
+                    <p><i class="fas fa-phone"></i> +233 30 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@ggic.com.gh</p>
+                </div>
+                
+                <div>
+                    <h4>Quick Links</h4>
+                    <ul style="list-style: none;">
+                        <li><a href="index.html" style="color: var(--white); text-decoration: none;">Home</a></li>
+                        <li><a href="index.html#about" style="color: var(--white); text-decoration: none;">About Us</a></li>
+                        <li><a href="index.html#partners" style="color: var(--white); text-decoration: none;">Our Partners</a></li>
+                        <li><a href="appointment.html" style="color: var(--white); text-decoration: none;">Invest With Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Ghana Growth Investment Co. All rights reserved. | Financial Services Authority Licensed</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 2FA Modal -->
+    <div class="modal" id="twoFAModal">
+        <div class="modal-content">
+            <i class="fas fa-shield-alt fa-3x" style="color: var(--accent-gold); margin-bottom: 1rem;"></i>
+            <h2>Two-Factor Authentication</h2>
+            <p>For your security, please enter the 6-digit verification code sent to your email.</p>
+            
+            <div class="code-inputs" id="codeInputs">
+                <input type="text" class="code-input" maxlength="1" data-index="0">
+                <input type="text" class="code-input" maxlength="1" data-index="1">
+                <input type="text" class="code-input" maxlength="1" data-index="2">
+                <input type="text" class="code-input" maxlength="1" data-index="3">
+                <input type="text" class="code-input" maxlength="1" data-index="4">
+                <input type="text" class="code-input" maxlength="1" data-index="5">
+            </div>
+            
+            <a href="#" class="resend-code" id="resendCode">Resend Code</a>
+            <div class="timer" id="resendTimer">Resend available in <span id="timerCount">60</span>s</div>
+            
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" id="verifyCodeBtn" style="width: 100%;">Verify Code</button>
+                <button class="btn btn-secondary" onclick="close2FAModal()" style="width: 100%; margin-top: 0.5rem;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Device Modal -->
+    <div class="modal" id="newDeviceModal">
+        <div class="modal-content">
+            <i class="fas fa-laptop fa-3x" style="color: var(--warning); margin-bottom: 1rem;"></i>
+            <h2>New Device Detected</h2>
+            <p>We've detected a login attempt from a new device or location. For security purposes, please enter your secret approval key.</p>
+            
+            <div class="form-group" style="margin: 2rem 0;">
+                <label class="form-label" for="approvalKey">Secret Approval Key</label>
+                <input type="password" id="approvalKey" class="form-input" placeholder="Enter your secret key">
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" id="approveDeviceBtn" style="width: 100%;">Approve Device</button>
+                <button class="btn btn-secondary" onclick="closeNewDeviceModal()" style="width: 100%; margin-top: 0.5rem;">Cancel Login</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js" type="module"></script>
+    <script src="js/auth.js" type="module"></script>
+</body>
+</html>

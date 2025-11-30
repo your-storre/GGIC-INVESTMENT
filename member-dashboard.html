@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Dashboard - GGIC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">GGIC</div>
+                <p>Member Portal</p>
+                <div class="sidebar-user">
+                    <div class="user-avatar" id="userAvatar">JD</div>
+                    <div class="user-info">
+                        <h4 id="userName">John Doe</h4>
+                        <p>Investor</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#transactions" class="nav-item" data-page="transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </a>
+                <a href="#beneficiary" class="nav-item" data-page="beneficiary">
+                    <i class="fas fa-users"></i>
+                    <span>Beneficiary</span>
+                </a>
+                <a href="#partners" class="nav-item" data-page="partners">
+                    <i class="fas fa-handshake"></i>
+                    <span>Investment Partners</span>
+                </a>
+                <a href="#settings" class="nav-item" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" class="nav-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1 id="pageTitle">Dashboard Overview</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">3</span>
+                    </div>
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page-content active">
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="investmentAmount">₵0.00</div>
+                            <div class="stat-label">Total Investment</div>
+                            <div class="stat-change positive">+5.2% from last month</div>
+                        </div>
+                        <div class="stat-card primary">
+                            <div class="stat-value" id="currentBalance">₵0.00</div>
+                            <div class="stat-label">Current Balance</div>
+                            <div class="stat-change positive">+2.1% today</div>
+                        </div>
+                        <div class="stat-card success">
+                            <div class="stat-value" id="dailyEarning">₵0.00</div>
+                            <div class="stat-label">Daily Earning</div>
+                            <div class="stat-change positive">Consistent</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-value" id="daysToMaturity">0</div>
+                            <div class="stat-label">Days to Maturity</div>
+                            <div class="stat-change negative">Ending soon</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-section">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Earnings Growth</h3>
+                                <select id="chartPeriod" class="form-select" style="width: auto;">
+                                    <option value="7d">Last 7 Days</option>
+                                    <option value="30d">Last 30 Days</option>
+                                    <option value="90d">Last 90 Days</option>
+                                    <option value="1y">Last Year</option>
+                                </select>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="earningsChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Portfolio Allocation</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="allocationChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Recent Activity</h3>
+                            <a href="#transactions" class="nav-item" data-page="transactions" style="color: var(--secondary-blue); text-decoration: none;">
+                                View All
+                            </a>
+                        </div>
+                        <div class="activity-list" id="recentActivity">
+                            <!-- Activity items will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Live Stock Widget -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Market Overview</h3>
+                        </div>
+                        <div class="stock-ticker" style="background: transparent; padding: 1rem 0;">
+                            <div class="ticker-content" id="dashboardStockTicker">
+                                <!-- Stock data will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Page -->
+                <div id="transactions-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Transaction History</h2>
+                        <div class="table-header">
+                            <h3>All Transactions</h3>
+                        </div>
+                        <div class="table-content">
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactionsTable">
+                                        <!-- Transactions will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficiary Page -->
+                <div id="beneficiary-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Beneficiary Management</h2>
+                        
+                        <!-- Current Beneficiary -->
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <h3>Current Beneficiary</h3>
+                            <div id="currentBeneficiary">
+                                <!-- Beneficiary info will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Update Beneficiary Form -->
+                        <div class="card">
+                            <h3>Update Beneficiary</h3>
+                            <form id="beneficiaryForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="beneficiaryName">Full Name</label>
+                                        <input type="text" id="beneficiaryName" class="form-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="beneficiaryRelationship">Relationship</label>
+                                        <select id="beneficiaryRelationship" class="form-select" required>
+                                            <option value="">Select Relationship</option>
+                                            <option value="spouse">Spouse</option>
+                                            <option value="child">Child</option>
+                                            <option value="parent">Parent</option>
+                                            <option value="sibling">Sibling</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label" for="beneficiaryPhone">Phone Number</label>
+                                        <input type="tel" id="beneficiaryPhone" class="form-input" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="beneficiaryEmail">Email Address</label>
+                                        <input type="email" id="beneficiaryEmail" class="form-input">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="beneficiaryAddress">Address</label>
+                                    <textarea id="beneficiaryAddress" class="form-input" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="updateReason">Reason for Update</label>
+                                    <textarea id="updateReason" class="form-input" rows="3" required placeholder="Please explain why you are updating the beneficiary..."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investment Partners Page -->
+                <div id="partners-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Our Investment Partners</h2>
+                        <p>GGIC strategically invests in these growing Ghanaian businesses</p>
+                        
+                        <div class="card-grid">
+                            <div class="card">
+                                <h3>Kofi Jobs Construction Ltd</h3>
+                                <p><strong>Sector:</strong> Infrastructure & Construction</p>
+                                <p><strong>Investment:</strong> ₵15,000,000</p>
+                                <p><strong>Performance:</strong> +12.5% YTD</p>
+                                <p>Leading infrastructure development specializing in affordable housing and commercial projects.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>Adom Agro Supplies</h3>
+                                <p><strong>Sector:</strong> Agriculture</p>
+                                <p><strong>Investment:</strong> ₵8,500,000</p>
+                                <p><strong>Performance:</strong> +8.2% YTD</p>
+                                <p>Agricultural inputs and processing revolutionizing Ghana's farming sector.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>Nana Foods Processing</h3>
+                                <p><strong>Sector:</strong> Food Manufacturing</p>
+                                <p><strong>Investment:</strong> ₵6,200,000</p>
+                                <p><strong>Performance:</strong> +15.3% YTD</p>
+                                <p>High-quality Ghanaian food products for local and international markets.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>Twum & Sons Logistics</h3>
+                                <p><strong>Sector:</strong> Transportation & Logistics</p>
+                                <p><strong>Investment:</strong> ₵12,000,000</p>
+                                <p><strong>Performance:</strong> +9.8% YTD</p>
+                                <p>Comprehensive logistics services connecting Ghanaian businesses to regional markets.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>Akosua Textiles Enterprise</h3>
+                                <p><strong>Sector:</strong> Manufacturing</p>
+                                <p><strong>Investment:</strong> ₵5,500,000</p>
+                                <p><strong>Performance:</strong> +7.5% YTD</p>
+                                <p>Traditional Ghanaian textile manufacturer preserving cultural heritage.</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>Ghana Tech Solutions</h3>
+                                <p><strong>Sector:</strong> Technology</p>
+                                <p><strong>Investment:</strong> ₵10,000,000</p>
+                                <p><strong>Performance:</strong> +22.1% YTD</p>
+                                <p>Innovative software solutions for Ghana's growing digital economy.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="settings-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Account Settings</h2>
+                        
+                        <!-- Profile Information -->
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <h3>Personal Information</h3>
+                            <div class="profile-header">
+                                <div class="profile-avatar" id="profileAvatar">
+                                    JD
+                                    <div class="avatar-upload" id="avatarUpload">
+                                        <i class="fas fa-camera"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 id="profileName">John Doe</h4>
+                                    <p>Member since <span id="memberSince">2024</span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-input" value="John Doe" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Ghana Card ID</label>
+                                    <input type="text" class="form-input" value="GHA-123456789" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Email Address</label>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <input type="email" class="form-input" value="john.doe@example.com" id="emailInput" readonly>
+                                        <button type="button" class="btn btn-secondary" onclick="enableEdit('email')">Change</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number</label>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <input type="tel" class="form-input" value="+233 24 123 4567" id="phoneInput" readonly>
+                                        <button type="button" class="btn btn-secondary" onclick="enableEdit('phone')">Change</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="card">
+                            <h3>Security Settings</h3>
+                            <div class="form-group">
+                                <button class="btn btn-secondary" onclick="changePassword()">
+                                    <i class="fas fa-key"></i> Change Password
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Two-Factor Authentication</label>
+                                <div style="display: flex; justify-content: between; align-items: center;">
+                                    <span>Enabled</span>
+                                    <button class="btn btn-secondary">Manage</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- File Upload Input -->
+    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+
+    <script src="js/firebase-config.js" type="module"></script>
+    <script src="js/dashboard.js" type="module"></script>
+</body>
+</html>

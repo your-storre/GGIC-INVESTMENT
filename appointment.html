@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Investment Consultation - GGIC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .appointment-hero {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 120px 0 60px;
+            text-align: center;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .form-section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .file-upload {
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: var(--secondary-blue);
+        }
+
+        .file-upload i {
+            font-size: 2rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .terms-checkbox input {
+            margin-top: 0.25rem;
+        }
+
+        .terms-text {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .terms-text a {
+            color: var(--secondary-blue);
+            text-decoration: none;
+        }
+
+        .terms-text a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary-blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">GGIC</div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#about">About Us</a></li>
+                    <li><a href="index.html#partners">Our Partners</a></li>
+                    <li><a href="index.html#how-it-works">How It Works</a></li>
+                    <li><a href="appointment.html" class="active">Invest With Us</a></li>
+                </ul>
+                <div class="auth-buttons">
+                    <a href="login.html" class="btn btn-secondary">Login</a>
+                    <a href="appointment.html" class="btn btn-primary">Get Started</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Appointment Hero -->
+    <section class="appointment-hero">
+        <div class="container">
+            <h1>Start Your Investment Journey</h1>
+            <p>Schedule a consultation with our investment advisors and discover how GGIC can help you achieve your financial goals</p>
+        </div>
+    </section>
+
+    <!-- Appointment Form -->
+    <section class="section section-light">
+        <div class="container">
+            <div class="form-container">
+                <form id="appointmentForm">
+                    <!-- Personal Information -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="fullName">Full Name *</label>
+                                <input type="text" id="fullName" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="email">Email Address *</label>
+                                <input type="email" id="email" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="phone">Phone Number *</label>
+                                <input type="tel" id="phone" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="ghanaCard">Ghana Card / National ID *</label>
+                                <input type="text" id="ghanaCard" class="form-input" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Investment Details -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-chart-line"></i> Investment Details</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="investmentAmount">Investment Amount (GHS) *</label>
+                                <select id="investmentAmount" class="form-select" required>
+                                    <option value="">Select Amount</option>
+                                    <option value="5000">₵5,000 - ₵10,000</option>
+                                    <option value="25000">₵25,000 - ₵50,000</option>
+                                    <option value="100000">₵100,000 - ₵250,000</option>
+                                    <option value="500000">₵500,000 - ₵1,000,000</option>
+                                    <option value="1000000">₵1,000,000+</option>
+                                    <option value="custom">Custom Amount</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="customAmountGroup" style="display: none;">
+                                <label class="form-label" for="customAmount">Custom Amount (GHS)</label>
+                                <input type="number" id="customAmount" class="form-input" min="1000" step="1000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="investmentDuration">Investment Duration *</label>
+                                <select id="investmentDuration" class="form-select" required>
+                                    <option value="">Select Duration</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="12">12 Months</option>
+                                    <option value="24">24 Months</option>
+                                    <option value="36">36 Months</option>
+                                    <option value="60">60 Months</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="appointmentDate">Preferred Appointment Date *</label>
+                                <input type="date" id="appointmentDate" class="form-input" required min="">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="investmentReason">Reason for Investing *</label>
+                            <textarea id="investmentReason" class="form-input" rows="4" required placeholder="Tell us about your investment goals and what you hope to achieve..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- ID Verification -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-id-card"></i> Identity Verification</h3>
+                        <div class="form-group">
+                            <label class="form-label">Upload Ghana Card / National ID *</label>
+                            <div class="file-upload" id="fileUploadArea">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Click to upload your Ghana Card or National ID</p>
+                                <p class="text-small">Supported formats: JPG, PNG, PDF (Max: 5MB)</p>
+                                <input type="file" id="idFile" class="file-input" accept=".jpg,.jpeg,.png,.pdf" required>
+                                <div class="file-name" id="fileName">No file chosen</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-shield-alt"></i> Terms & Conditions</h3>
+                        <div class="terms-checkbox">
+                            <input type="checkbox" id="termsAgreement" required>
+                            <label for="termsAgreement" class="terms-text">
+                                I have read and agree to the <a href="#" onclick="showTermsModal()">Terms and Conditions</a>, 
+                                <a href="#" onclick="showPrivacyModal()">Privacy Policy</a>, and understand that this appointment request 
+                                does not guarantee investment approval. I confirm that all information provided is accurate and complete.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="form-section">
+                        <div class="loading" id="loadingIndicator">
+                            <div class="loading-spinner"></div>
+                            <p>Submitting your appointment request...</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary submit-btn" id="submitBtn">
+                            <i class="fas fa-paper-plane"></i> Submit Appointment Request
+                        </button>
+                        <p class="text-center text-small" style="margin-top: 1rem;">
+                            Our investment advisor will contact you within 24 hours to confirm your appointment.
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <h3>GGIC</h3>
+                    <p>Ghana Growth Investment Co<br>
+                    Building Ghana's Future Through Strategic Investments</p>
+                </div>
+                
+                <div>
+                    <h4>Contact Info</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> Airport City, Accra, Ghana</p>
+                    <p><i class="fas fa-phone"></i> +233 30 123 4567</p>
+                    <p><i class="fas fa-envelope"></i> info@ggic.com.gh</p>
+                </div>
+                
+                <div>
+                    <h4>Quick Links</h4>
+                    <ul style="list-style: none;">
+                        <li><a href="index.html" style="color: var(--white); text-decoration: none;">Home</a></li>
+                        <li><a href="index.html#about" style="color: var(--white); text-decoration: none;">About Us</a></li>
+                        <li><a href="index.html#partners" style="color: var(--white); text-decoration: none;">Our Partners</a></li>
+                        <li><a href="login.html" style="color: var(--white); text-decoration: none;">Member Login</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Ghana Growth Investment Co. All rights reserved. | Financial Services Authority Licensed</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Success Modal -->
+    <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center; max-width: 500px; margin: 2rem;">
+            <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;"></i>
+            <h2>Appointment Request Submitted!</h2>
+            <p>Thank you for your interest in GGIC. Our investment advisor will contact you within 24 hours to confirm your appointment and discuss next steps.</p>
+            <div style="margin-top: 2rem;">
+                <button onclick="closeSuccessModal()" class="btn btn-primary">Return to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js" type="module"></script>
+    <script src="js/appointment.js" type="module"></script>
+</body>
+</html>

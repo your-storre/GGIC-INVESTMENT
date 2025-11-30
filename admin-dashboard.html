@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - GGIC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .admin-stat {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .admin-stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .admin-stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .tab-navigation {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .tab-button {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab-button.active {
+            border-bottom-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">GGIC</div>
+                <p>Admin Portal</p>
+                <div class="sidebar-user">
+                    <div class="user-avatar" id="userAvatar">AD</div>
+                    <div class="user-info">
+                        <h4 id="userName">Admin User</h4>
+                        <p>Administrator</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#overview" class="nav-item active" data-page="overview">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#members" class="nav-item" data-page="members">
+                    <i class="fas fa-users"></i>
+                    <span>Member Management</span>
+                </a>
+                <a href="#appointments" class="nav-item" data-page="appointments">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Appointments</span>
+                </a>
+                <a href="#beneficiaries" class="nav-item" data-page="beneficiaries">
+                    <i class="fas fa-user-friends"></i>
+                    <span>Beneficiary Requests</span>
+                </a>
+                <a href="#payouts" class="nav-item" data-page="payouts">
+                    <i class="fas fa-money-check"></i>
+                    <span>Payout Management</span>
+                </a>
+                <a href="#messaging" class="nav-item" data-page="messaging">
+                    <i class="fas fa-envelope"></i>
+                    <span>Messaging</span>
+                </a>
+                <a href="#security" class="nav-item" data-page="security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security</span>
+                </a>
+                <a href="#" class="nav-item" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1 id="pageTitle">Admin Overview</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">5</span>
+                    </div>
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Overview Page -->
+                <div id="overview-page" class="page-content active">
+                    <!-- Admin Stats -->
+                    <div class="admin-stats">
+                        <div class="admin-stat">
+                            <div class="admin-stat-value" id="totalMembers">0</div>
+                            <div class="admin-stat-label">Total Members</div>
+                        </div>
+                        <div class="admin-stat">
+                            <div class="admin-stat-value" id="pendingAppointments">0</div>
+                            <div class="admin-stat-label">Pending Appointments</div>
+                        </div>
+                        <div class="admin-stat">
+                            <div class="admin-stat-value" id="pendingPayouts">0</div>
+                            <div class="admin-stat-label">Pending Payouts</div>
+                        </div>
+                        <div class="admin-stat">
+                            <div class="admin-stat-value" id="totalInvestments">₵0</div>
+                            <div class="admin-stat-label">Total Investments</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card-grid">
+                        <div class="card">
+                            <h3><i class="fas fa-user-plus"></i> Register New Member</h3>
+                            <p>Create new investor accounts and generate login credentials</p>
+                            <button class="btn btn-primary" onclick="showMemberRegistration()">Register Member</button>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-calendar-alt"></i> Manage Appointments</h3>
+                            <p>Review and approve investment consultation requests</p>
+                            <button class="btn btn-primary" onclick="navigateToPage('appointments')">View Appointments</button>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-money-bill-wave"></i> Process Payouts</h3>
+                            <p>Manage investment maturity and payout approvals</p>
+                            <button class="btn btn-primary" onclick="navigateToPage('payouts')">View Payouts</button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Recent System Activity</h3>
+                        </div>
+                        <div class="activity-list" id="adminActivity">
+                            <!-- Admin activity will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members Management Page -->
+                <div id="members-page" class="page-content">
+                    <div class="form-section">
+                        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2>Member Management</h2>
+                            <button class="btn btn-primary" onclick="showMemberRegistration()">
+                                <i class="fas fa-user-plus"></i> Register New Member
+                            </button>
+                        </div>
+                        
+                        <div class="data-table">
+                            <div class="table-content">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Investment</th>
+                                            <th>Status</th>
+                                            <th>Join Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="membersTable">
+                                        <!-- Members will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Management Page -->
+                <div id="appointments-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Appointment Requests</h2>
+                        
+                        <div class="tab-navigation">
+                            <button class="tab-button active" data-tab="pending">Pending</button>
+                            <button class="tab-button" data-tab="approved">Approved</button>
+                            <button class="tab-button" data-tab="rejected">Rejected</button>
+                        </div>
+
+                        <div class="tab-content active" id="pending-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Investment Amount</th>
+                                                <th>Preferred Date</th>
+                                                <th>Submitted</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pendingAppointmentsTable">
+                                            <!-- Pending appointments will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="approved-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Investment Amount</th>
+                                                <th>Scheduled Date</th>
+                                                <th>Approved By</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="approvedAppointmentsTable">
+                                            <!-- Approved appointments will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="rejected-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Investment Amount</th>
+                                                <th>Reason</th>
+                                                <th>Rejected By</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rejectedAppointmentsTable">
+                                            <!-- Rejected appointments will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficiary Requests Page -->
+                <div id="beneficiaries-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Beneficiary Change Requests</h2>
+                        
+                        <div class="data-table">
+                            <div class="table-content">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Member</th>
+                                            <th>Current Beneficiary</th>
+                                            <th>New Beneficiary</th>
+                                            <th>Relationship</th>
+                                            <th>Reason</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="beneficiaryRequestsTable">
+                                        <!-- Beneficiary requests will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payout Management Page -->
+                <div id="payouts-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Payout Management</h2>
+                        
+                        <div class="tab-navigation">
+                            <button class="tab-button active" data-tab="maturity">Ready for Payout</button>
+                            <button class="tab-button" data-tab="completed">Completed Payouts</button>
+                        </div>
+
+                        <div class="tab-content active" id="maturity-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Investment Amount</th>
+                                                <th>Total Return</th>
+                                                <th>Maturity Date</th>
+                                                <th>Days Overdue</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maturityPayoutsTable">
+                                            <!-- Maturity payouts will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-content" id="completed-tab">
+                            <div class="data-table">
+                                <div class="table-content">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Investment Amount</th>
+                                                <th>Total Paid</th>
+                                                <th>Payment Date</th>
+                                                <th>Processed By</th>
+                                                <th>Reference</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="completedPayoutsTable">
+                                            <!-- Completed payouts will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messaging Page -->
+                <div id="messaging-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Admin Messaging</h2>
+                        
+                        <div class="card-grid">
+                            <div class="card">
+                                <h3><i class="fas fa-envelope"></i> Send Notification</h3>
+                                <form id="notificationForm">
+                                    <div class="form-group">
+                                        <label class="form-label">Recipients</label>
+                                        <select class="form-select" id="notificationRecipients">
+                                            <option value="all">All Members</option>
+                                            <option value="specific">Specific Members</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Subject</label>
+                                        <input type="text" class="form-input" id="notificationSubject" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Message</label>
+                                        <textarea class="form-input" id="notificationMessage" rows="5" required></textarea>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-primary">Send Notification</button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="card">
+                                <h3><i class="fas fa-history"></i> Sent Notifications</h3>
+                                <div class="activity-list" id="sentNotifications">
+                                    <!-- Sent notifications will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Page -->
+                <div id="security-page" class="page-content">
+                    <div class="form-section">
+                        <h2>Security Management</h2>
+                        
+                        <div class="card-grid">
+                            <div class="card">
+                                <h3><i class="fas fa-user-lock"></i> Account Controls</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Select Member</label>
+                                    <select class="form-select" id="securityMemberSelect">
+                                        <option value="">Select a member</option>
+                                    </select>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-warning" onclick="freezeAccount()">Freeze Account</button>
+                                    <button class="btn btn-error" onclick="banUser()">Ban User</button>
+                                    <button class="btn btn-secondary" onclick="reset2FA()">Reset 2FA</button>
+                                </div>
+                            </div>
+                            
+                            <div class="card">
+                                <h3><i class="fas fa-laptop"></i> Device Management</h3>
+                                <div class="data-table">
+                                    <div class="table-content">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Device</th>
+                                                    <th>Last Login</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="deviceManagementTable">
+                                                <!-- Device management will be populated by JavaScript -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Member Registration Modal -->
+    <div class="modal-overlay" id="memberRegistrationModal">
+        <div class="modal-content">
+            <h2>Register New Member</h2>
+            <form id="memberRegistrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-input" id="regFullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-input" id="regEmail" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Phone *</label>
+                        <input type="tel" class="form-input" id="regPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ghana Card ID *</label>
+                        <input type="text" class="form-input" id="regGhanaCard" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Investment Amount (GHS) *</label>
+                        <input type="number" class="form-input" id="regInvestment" required min="1000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duration (Months) *</label>
+                        <select class="form-select" id="regDuration" required>
+                            <option value="6">6 Months</option>
+                            <option value="12">12 Months</option>
+                            <option value="24">24 Months</option>
+                            <option value="36">36 Months</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Daily Profit Rate (%)</label>
+                    <input type="number" class="form-input" id="regProfitRate" value="0.25" step="0.01" min="0.1" max="2">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Initial Beneficiary Name</label>
+                    <input type="text" class="form-input" id="regBeneficiary">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('memberRegistrationModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Register Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js" type="module"></script>
+    <script src="js/admin.js" type="module"></script>
+</body>
+</html>
