@@ -5,51 +5,673 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member Dashboard - GGIC</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Mobile First Design */
+        .mobile-dashboard {
+            min-height: 100vh;
+            background: var(--light-grey);
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: white;
+            padding: 1rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .notification-bell {
+            position: relative;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--dark-grey);
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .user-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-light);
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 120px 1rem 80px 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid var(--accent-gold);
+        }
+
+        .stat-card.primary {
+            border-left-color: var(--primary-blue);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .stat-change {
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s ease;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-icon {
+            font-size: 2rem;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+
+        .action-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-description {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        /* Activity List */
+        .activity-list {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .activity-icon.deposit {
+            background: var(--success);
+        }
+
+        .activity-icon.profit {
+            background: var(--accent-gold);
+        }
+
+        .activity-icon.withdrawal {
+            background: var(--primary-blue);
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .activity-description {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .activity-amount {
+            font-weight: 600;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .activity-amount.positive {
+            color: var(--success);
+        }
+
+        .activity-amount.negative {
+            color: var(--error);
+        }
+
+        /* Tables */
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 1rem;
+        }
+
+        .table-content {
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-dark);
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-badge.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.pending {
+            background: #fef3cd;
+            color: #92400e;
+        }
+
+        /* Forms */
+        .form-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--secondary-blue);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        /* Partner Cards */
+        .partner-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .partner-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .partner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .partner-name {
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .sector-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .sector-badge.construction {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .partner-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .partner-stat {
+            text-align: center;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        /* Settings */
+        .settings-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--dark-grey);
+            position: relative;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        /* Desktop Styles */
+        @media (min-width: 768px) {
+            .mobile-header {
+                padding: 1rem 2rem;
+            }
+
+            .main-content {
+                padding: 140px 2rem 100px 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .partner-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            /* Show desktop sidebar */
+            .desktop-sidebar {
+                display: block;
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 250px;
+                background: var(--dark-grey);
+                color: white;
+                padding: 2rem 1rem;
+                overflow-y: auto;
+            }
+
+            .desktop-nav {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .desktop-nav-item {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1rem;
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: background 0.3s ease;
+            }
+
+            .desktop-nav-item.active {
+                background: rgba(255,255,255,0.1);
+                color: var(--accent-gold);
+            }
+
+            .desktop-nav-item:hover {
+                background: rgba(255,255,255,0.1);
+            }
+
+            .main-content {
+                margin-left: 250px;
+                padding: 2rem;
+            }
+
+            .mobile-header {
+                display: none;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body>
-    <div class="dashboard">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">GGIC</div>
-                <p>Member Portal</p>
-                <div class="sidebar-user">
-                    <div class="user-avatar" id="userAvatar">
-                        <img id="avatarImage" style="width: 100%; height: 100%; border-radius: 50%; display: none;">
-                        <span id="avatarInitials">JD</span>
-                    </div>
-                    <div class="user-info">
-                        <h4 id="userName">John Doe</h4>
-                        <p>Investor</p>
+    <div class="mobile-dashboard">
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="header-top">
+                <div class="logo">GGIC</div>
+                <div class="header-actions">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count">3</span>
                     </div>
                 </div>
             </div>
-            
-            <nav class="sidebar-nav">
-                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">JD</div>
+                <div class="user-details">
+                    <h3 id="userName">John Doe</h3>
+                    <p>Investor</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Desktop Sidebar (Hidden on mobile) -->
+        <aside class="desktop-sidebar">
+            <div class="logo" style="font-size: 1.8rem; margin-bottom: 2rem; text-align: center;">GGIC</div>
+            <nav class="desktop-nav">
+                <a href="#overview" class="desktop-nav-item active" data-page="overview">
                     <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
+                    <span>Overview</span>
                 </a>
-                <a href="#transactions" class="nav-item" data-page="transactions">
+                <a href="#transactions" class="desktop-nav-item" data-page="transactions">
                     <i class="fas fa-exchange-alt"></i>
                     <span>Transactions</span>
                 </a>
-                <a href="#beneficiary" class="nav-item" data-page="beneficiary">
+                <a href="#beneficiary" class="desktop-nav-item" data-page="beneficiary">
                     <i class="fas fa-users"></i>
                     <span>Beneficiary</span>
                 </a>
-                <a href="#partners" class="nav-item" data-page="partners">
+                <a href="#partners" class="desktop-nav-item" data-page="partners">
                     <i class="fas fa-handshake"></i>
-                    <span>Investment Partners</span>
+                    <span>Partners</span>
                 </a>
-                <a href="#settings" class="nav-item" data-page="settings">
+                <a href="#settings" class="desktop-nav-item" data-page="settings">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
-                <a href="#" class="nav-item" id="logoutBtn">
+                <a href="#" class="desktop-nav-item" id="logoutBtn">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -58,506 +680,472 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Top Bar -->
-            <div class="top-bar">
-                <div class="page-title">
-                    <h1 id="pageTitle">Dashboard Overview</h1>
-                </div>
-                <div class="top-bar-actions">
-                    <div class="notification-bell" id="notificationBell">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-count" id="notificationCount">0</span>
+            <!-- Overview Page -->
+            <div id="overview-page" class="page active">
+                <h1 style="margin-bottom: 2rem;">Portfolio Overview</h1>
+                
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="investmentAmount">₵50,000</div>
+                        <div class="stat-label">Total Investment</div>
+                        <div class="stat-change positive">+5.2% growth</div>
                     </div>
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">
-                        <i class="fas fa-bars"></i>
-                    </button>
+                    <div class="stat-card primary">
+                        <div class="stat-value" id="currentBalance">₵58,750</div>
+                        <div class="stat-label">Current Balance</div>
+                        <div class="stat-change positive">+2.1% today</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="stat-value" id="dailyEarning">₵125</div>
+                        <div class="stat-label">Daily Earning</div>
+                        <div class="stat-change positive">Consistent</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="daysToMaturity">45</div>
+                        <div class="stat-label">Days to Maturity</div>
+                        <div class="stat-change">Active</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="#transactions" class="action-card" data-page="transactions">
+                        <div class="action-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="action-title">Transactions</div>
+                        <div class="action-description">View all transactions</div>
+                    </a>
+                    <a href="#beneficiary" class="action-card" data-page="beneficiary">
+                        <div class="action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="action-title">Beneficiary</div>
+                        <div class="action-description">Manage beneficiary</div>
+                    </a>
+                    <a href="#partners" class="action-card" data-page="partners">
+                        <div class="action-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="action-title">Partners</div>
+                        <div class="action-description">Investment partners</div>
+                    </a>
+                    <a href="#settings" class="action-card" data-page="settings">
+                        <div class="action-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="action-title">Settings</div>
+                        <div class="action-description">Account settings</div>
+                    </a>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="form-section">
+                    <h3 style="margin-bottom: 1rem;">Recent Activity</h3>
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon profit">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Daily Profit</div>
+                                <div class="activity-description">Portfolio growth</div>
+                            </div>
+                            <div class="activity-amount positive">+₵125</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon profit">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Daily Profit</div>
+                                <div class="activity-description">Portfolio growth</div>
+                            </div>
+                            <div class="activity-amount positive">+₵125</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon deposit">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="activity-details">
+                                <div class="activity-title">Investment</div>
+                                <div class="activity-description">Initial deposit</div>
+                            </div>
+                            <div class="activity-amount positive">+₵50,000</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Dashboard Content -->
-            <div class="dashboard-content">
-                <!-- Dashboard Page -->
-                <div id="dashboard-page" class="page-content active">
-                    <!-- Stats Grid -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="investmentAmount">₵0.00</div>
-                            <div class="stat-label">Total Investment</div>
-                            <div class="stat-change positive" id="investmentChange">+5.2% from last month</div>
-                        </div>
-                        <div class="stat-card primary">
-                            <div class="stat-value" id="currentBalance">₵0.00</div>
-                            <div class="stat-label">Current Balance</div>
-                            <div class="stat-change positive" id="balanceChange">+2.1% today</div>
-                        </div>
-                        <div class="stat-card success">
-                            <div class="stat-value" id="dailyEarning">₵0.00</div>
-                            <div class="stat-label">Daily Earning</div>
-                            <div class="stat-change positive">Consistent</div>
-                        </div>
-                        <div class="stat-card warning">
-                            <div class="stat-value" id="daysToMaturity">0</div>
-                            <div class="stat-label">Days to Maturity</div>
-                            <div class="stat-change" id="maturityStatus">Active</div>
-                        </div>
+            <!-- Transactions Page -->
+            <div id="transactions-page" class="page">
+                <h1 style="margin-bottom: 2rem;">Transaction History</h1>
+                
+                <div class="form-section">
+                    <div class="filter-options" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <select class="form-select" style="flex: 1; min-width: 150px;">
+                            <option>All Transactions</option>
+                            <option>Deposits</option>
+                            <option>Profits</option>
+                            <option>Withdrawals</option>
+                        </select>
+                        <select class="form-select" style="flex: 1; min-width: 150px;">
+                            <option>All Time</option>
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                        </select>
                     </div>
 
-                    <!-- Charts Section -->
-                    <div class="charts-section">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h3>Portfolio Growth</h3>
-                                <select id="chartPeriod" class="form-select" style="width: auto;">
-                                    <option value="7d">Last 7 Days</option>
-                                    <option value="30d" selected>Last 30 Days</option>
-                                    <option value="90d">Last 90 Days</option>
-                                    <option value="1y">Last Year</option>
-                                </select>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="earningsChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h3>Earnings Distribution</h3>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="allocationChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity & Market Overview -->
-                    <div class="charts-section">
-                        <div class="chart-card" style="flex: 2;">
-                            <div class="chart-header">
-                                <h3>Recent Activity</h3>
-                                <a href="#transactions" class="nav-item" data-page="transactions" style="color: var(--secondary-blue); text-decoration: none;">
-                                    View All
-                                </a>
-                            </div>
-                            <div class="activity-list" id="recentActivity">
-                                <div class="loading">
-                                    <div class="loading-spinner"></div>
-                                    <p>Loading recent activity...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <h3>Market Overview</h3>
-                                <i class="fas fa-sync-alt" id="refreshStocks" style="cursor: pointer; color: var(--secondary-blue);"></i>
-                            </div>
-                            <div class="stock-widget" id="stockWidget">
-                                <div class="stock-list" id="stockList">
-                                    <!-- Stocks will be populated by JavaScript -->
-                                </div>
-                            </div>
+                    <div class="data-table">
+                        <div class="table-content">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Today</td>
+                                        <td>Profit</td>
+                                        <td>+₵125</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Yesterday</td>
+                                        <td>Profit</td>
+                                        <td>+₵125</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>15 Mar 2024</td>
+                                        <td>Deposit</td>
+                                        <td>+₵50,000</td>
+                                        <td><span class="status-badge completed">Completed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Transactions Page -->
-                <div id="transactions-page" class="page-content">
-                    <div class="form-section">
-                        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                            <h2>Transaction History</h2>
-                            <div style="display: flex; gap: 1rem; align-items: center;">
-                                <select id="transactionFilter" class="form-select" style="width: auto;">
-                                    <option value="all">All Transactions</option>
-                                    <option value="deposit">Deposits</option>
-                                    <option value="profit">Profits</option>
-                                    <option value="withdrawal">Withdrawals</option>
-                                </select>
-                                <select id="transactionPeriod" class="form-select" style="width: auto;">
-                                    <option value="all">All Time</option>
-                                    <option value="7d">Last 7 Days</option>
-                                    <option value="30d">Last 30 Days</option>
-                                    <option value="90d">Last 90 Days</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="data-table">
-                            <div class="table-content">
-                                <div class="table-responsive">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Type</th>
-                                                <th>Description</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Reference</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="transactionsTable">
-                                            <tr>
-                                                <td colspan="6" class="text-center">
-                                                    <div class="loading">
-                                                        <div class="loading-spinner"></div>
-                                                        <p>Loading transactions...</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <div class="table-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; border-top: 1px solid #e5e7eb;">
-                                    <div class="table-info" id="tableInfo">
-                                        Showing 0 transactions
-                                    </div>
-                                    <div class="pagination" id="pagination">
-                                        <!-- Pagination will be added by JavaScript -->
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Beneficiary Page -->
+            <div id="beneficiary-page" class="page">
+                <h1 style="margin-bottom: 2rem;">Beneficiary Management</h1>
+                
+                <div class="form-section">
+                    <h3 style="margin-bottom: 1rem;">Current Beneficiary</h3>
+                    <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                        <div style="display: grid; gap: 0.5rem;">
+                            <div><strong>Name:</strong> Jane Doe</div>
+                            <div><strong>Relationship:</strong> Spouse</div>
+                            <div><strong>Phone:</strong> +233 24 987 6543</div>
+                            <div><strong>Email:</strong> jane.doe@example.com</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Beneficiary Page -->
-                <div id="beneficiary-page" class="page-content">
-                    <div class="form-section">
-                        <h2>Beneficiary Management</h2>
-                        <p style="margin-bottom: 2rem; color: var(--text-light);">
-                            Manage your investment beneficiary information. All changes require administrative approval.
+                    <h3 style="margin-bottom: 1rem;">Update Beneficiary</h3>
+                    <form>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" placeholder="Enter beneficiary name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Relationship</label>
+                            <select class="form-select">
+                                <option>Select Relationship</option>
+                                <option>Spouse</option>
+                                <option>Child</option>
+                                <option>Parent</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" placeholder="+233 XX XXX XXXX">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Partners Page -->
+            <div id="partners-page" class="page">
+                <h1 style="margin-bottom: 2rem;">Investment Partners</h1>
+                
+                <div class="partner-grid">
+                    <div class="partner-card">
+                        <div class="partner-header">
+                            <h3 class="partner-name">Kofi Jobs Construction</h3>
+                            <span class="sector-badge construction">Construction</span>
+                        </div>
+                        <div class="partner-stats">
+                            <div class="partner-stat">
+                                <div style="font-weight: 600; color: var(--primary-blue);">₵15M</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">Investment</div>
+                            </div>
+                            <div class="partner-stat">
+                                <div style="font-weight: 600; color: var(--success);">+12.5%</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">Performance</div>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin: 0;">
+                            Leading infrastructure development company specializing in affordable housing.
                         </p>
-                        
-                        <!-- Current Beneficiary -->
-                        <div class="card" style="margin-bottom: 2rem;">
-                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                                <h3>Current Beneficiary</h3>
-                                <span class="status-badge completed" id="beneficiaryStatus">Active</span>
-                            </div>
-                            <div id="currentBeneficiary">
-                                <div class="loading">
-                                    <div class="loading-spinner"></div>
-                                    <p>Loading beneficiary information...</p>
-                                </div>
-                            </div>
-                        </div>
+                    </div>
 
-                        <!-- Beneficiary Update History -->
-                        <div class="card" style="margin-bottom: 2rem;">
-                            <h3>Update History</h3>
-                            <div class="activity-list" id="beneficiaryHistory">
-                                <div class="empty-state">
-                                    <i class="fas fa-history"></i>
-                                    <p>No update history available</p>
-                                </div>
+                    <div class="partner-card">
+                        <div class="partner-header">
+                            <h3 class="partner-name">Adom Agro Supplies</h3>
+                            <span class="sector-badge construction">Agriculture</span>
+                        </div>
+                        <div class="partner-stats">
+                            <div class="partner-stat">
+                                <div style="font-weight: 600; color: var(--primary-blue);">₵8.5M</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">Investment</div>
+                            </div>
+                            <div class="partner-stat">
+                                <div style="font-weight: 600; color: var(--success);">+8.2%</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">Performance</div>
                             </div>
                         </div>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin: 0;">
+                            Agricultural inputs and processing revolutionizing Ghana's farming sector.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Update Beneficiary Form -->
-                        <div class="card">
-                            <h3>Update Beneficiary Information</h3>
-                            <p style="margin-bottom: 1.5rem; color: var(--text-light); font-size: 0.9rem;">
-                                Please provide complete and accurate information for your beneficiary. All updates are subject to verification and approval.
-                            </p>
-                            
-                            <form id="beneficiaryForm">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="beneficiaryName">Full Name *</label>
-                                        <input type="text" id="beneficiaryName" class="form-input" required placeholder="Enter beneficiary's full name">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="beneficiaryRelationship">Relationship *</label>
-                                        <select id="beneficiaryRelationship" class="form-select" required>
-                                            <option value="">Select Relationship</option>
-                                            <option value="spouse">Spouse</option>
-                                            <option value="child">Child</option>
-                                            <option value="parent">Parent</option>
-                                            <option value="sibling">Sibling</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="beneficiaryPhone">Phone Number *</label>
-                                        <input type="tel" id="beneficiaryPhone" class="form-input" required placeholder="+233 XX XXX XXXX">
-                                        <div class="form-hint">Include country code (e.g., +233)</div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="beneficiaryEmail">Email Address</label>
-                                        <input type="email" id="beneficiaryEmail" class="form-input" placeholder="beneficiary@example.com">
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="beneficiaryAddress">Residential Address</label>
-                                    <textarea id="beneficiaryAddress" class="form-input" rows="3" placeholder="Enter complete residential address"></textarea>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="beneficiaryId">ID Number (Optional)</label>
-                                    <input type="text" id="beneficiaryId" class="form-input" placeholder="Ghana Card or National ID">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="updateReason">Reason for Update *</label>
-                                    <textarea id="updateReason" class="form-input" rows="3" required placeholder="Please explain why you are updating the beneficiary information..."></textarea>
-                                    <div class="form-hint">Provide detailed explanation for the beneficiary change</div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <div class="terms-checkbox">
-                                        <input type="checkbox" id="beneficiaryAgreement" required>
-                                        <label for="beneficiaryAgreement" class="terms-text">
-                                            I confirm that the information provided is accurate and complete. I understand that this update request requires administrative approval and may take 2-3 business days to process.
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-actions">
-                                    <button type="button" class="btn btn-secondary" onclick="resetBeneficiaryForm()">Cancel</button>
-                                    <button type="submit" class="btn btn-primary" id="submitBeneficiaryBtn">
-                                        <i class="fas fa-paper-plane"></i> Submit Update Request
-                                    </button>
-                                </div>
-                            </form>
+            <!-- Settings Page -->
+            <div id="settings-page" class="page">
+                <h1 style="margin-bottom: 2rem;">Account Settings</h1>
+                
+                <div class="settings-section">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            JD
+                            <div class="avatar-upload">
+                                <i class="fas fa-camera"></i>
+                            </div>
                         </div>
+                        <div>
+                            <h3 style="margin: 0;">John Doe</h3>
+                            <p style="margin: 0; color: var(--text-light);">Member since 2024</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" value="John Doe" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" value="john.doe@example.com" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" value="+233 24 123 4567" readonly>
                     </div>
                 </div>
 
-                <!-- Investment Partners Page -->
-                <div id="partners-page" class="page-content">
-                    <div class="form-section">
-                        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                            <div>
-                                <h2>Our Investment Partners</h2>
-                                <p style="margin: 0; color: var(--text-light);">GGIC strategically invests in these growing Ghanaian businesses</p>
-                            </div>
-                            <div class="investment-summary">
-                                <div class="stat-value" style="font-size: 1.5rem; color: var(--accent-gold);">₵150M+</div>
-                                <div class="stat-label">Total Investments Deployed</div>
-                            </div>
-                        </div>
-                        
-                        <div class="partners-filter" style="margin-bottom: 2rem;">
-                            <div class="filter-buttons">
-                                <button class="filter-btn active" data-filter="all">All Sectors</button>
-                                <button class="filter-btn" data-filter="construction">Construction</button>
-                                <button class="filter-btn" data-filter="agriculture">Agriculture</button>
-                                <button class="filter-btn" data-filter="technology">Technology</button>
-                                <button class="filter-btn" data-filter="manufacturing">Manufacturing</button>
-                                <button class="filter-btn" data-filter="logistics">Logistics</button>
-                            </div>
-                        </div>
-                        
-                        <div class="card-grid" id="partnersGrid">
-                            <!-- Partners will be populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Page -->
-                <div id="settings-page" class="page-content">
-                    <div class="form-section">
-                        <h2>Account Settings</h2>
-                        
-                        <!-- Profile Information -->
-                        <div class="card" style="margin-bottom: 2rem;">
-                            <h3>Personal Information</h3>
-                            <div class="profile-header">
-                                <div class="profile-avatar" id="profileAvatar">
-                                    <img id="profileAvatarImage" style="width: 100%; height: 100%; border-radius: 50%; display: none;">
-                                    <span id="profileAvatarInitials">JD</span>
-                                    <div class="avatar-upload" id="avatarUpload">
-                                        <i class="fas fa-camera"></i>
-                                        <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 id="profileName">John Doe</h4>
-                                    <p>Member since <span id="memberSince">2024</span></p>
-                                    <p class="text-small" id="memberId">ID: GGIC-M-001234</p>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-input" value="John Doe" id="profileFullName" readonly>
-                                    <div class="form-hint">Legal name as registered</div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Ghana Card ID</label>
-                                    <input type="text" class="form-input" value="GHA-123456789" id="profileGhanaCard" readonly>
-                                    <div class="form-hint">National identification number</div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Email Address</label>
-                                    <div class="input-with-action">
-                                        <input type="email" class="form-input" value="john.doe@example.com" id="profileEmail" readonly>
-                                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableFieldEdit('email')">Change</button>
-                                    </div>
-                                    <div class="form-hint">Primary contact email</div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Phone Number</label>
-                                    <div class="input-with-action">
-                                        <input type="tel" class="form-input" value="+233 24 123 4567" id="profilePhone" readonly>
-                                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableFieldEdit('phone')">Change</button>
-                                    </div>
-                                    <div class="form-hint">Primary contact number</div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Date of Birth</label>
-                                    <input type="text" class="form-input" value="15 March 1985" readonly>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Account Status</label>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span class="status-badge completed">Active</span>
-                                        <span class="text-small">Verified</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Security Settings -->
-                        <div class="card" style="margin-bottom: 2rem;">
-                            <h3>Security Settings</h3>
-                            
-                            <div class="security-item">
-                                <div class="security-info">
-                                    <h4>Password</h4>
-                                    <p>Last changed: <span id="lastPasswordChange">2 months ago</span></p>
-                                </div>
-                                <button class="btn btn-primary" onclick="changePassword()">
-                                    <i class="fas fa-key"></i> Change Password
-                                </button>
-                            </div>
-                            
-                            <div class="security-item">
-                                <div class="security-info">
-                                    <h4>Two-Factor Authentication</h4>
-                                    <p>Enhanced security for your account</p>
-                                </div>
-                                <div class="toggle-switch">
-                                    <label class="switch">
-                                        <input type="checkbox" id="twoFactorToggle" checked>
-                                        <span class="slider round"></span>
-                                    </label>
-                                    <span>Enabled</span>
-                                </div>
-                            </div>
-                            
-                            <div class="security-item">
-                                <div class="security-info">
-                                    <h4>Login Activity</h4>
-                                    <p>Recent account access</p>
-                                </div>
-                                <button class="btn btn-secondary" onclick="viewLoginActivity()">
-                                    <i class="fas fa-history"></i> View History
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Notification Preferences -->
-                        <div class="card">
-                            <h3>Notification Preferences</h3>
-                            
-                            <div class="notification-item">
-                                <div class="notification-info">
-                                    <h4>Email Notifications</h4>
-                                    <p>Receive updates via email</p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="emailNotifications" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            
-                            <div class="notification-item">
-                                <div class="notification-info">
-                                    <h4>SMS Alerts</h4>
-                                    <p>Important updates via SMS</p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="smsNotifications" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            
-                            <div class="notification-item">
-                                <div class="notification-info">
-                                    <h4>Investment Reports</h4>
-                                    <p>Weekly portfolio performance</p>
-                                </div>
-                                <label class="switch">
-                                    <input type="checkbox" id="reportNotifications" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="button" class="btn btn-primary" onclick="saveNotificationPreferences()">
-                                    <i class="fas fa-save"></i> Save Preferences
-                                </button>
-                            </div>
-                        </div>
+                <div class="settings-section">
+                    <h3 style="margin-bottom: 1rem;">Security</h3>
+                    <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                    <div style="display: flex; justify-content: between; align-items: center;">
+                        <span>Two-Factor Authentication</span>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
                     </div>
                 </div>
             </div>
         </main>
-    </div>
 
-    <!-- Change Password Modal -->
-    <div class="modal-overlay" id="passwordModal">
-        <div class="modal-content">
-            <h2>Change Password</h2>
-            <form id="passwordForm">
-                <div class="form-group">
-                    <label class="form-label" for="currentPassword">Current Password</label>
-                    <input type="password" id="currentPassword" class="form-input" required>
+        <!-- Bottom Navigation (Mobile Only) -->
+        <nav class="bottom-nav">
+            <a href="#overview" class="nav-item active" data-page="overview">
+                <div class="nav-icon">
+                    <i class="fas fa-home"></i>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="newPassword">New Password</label>
-                    <input type="password" id="newPassword" class="form-input" required minlength="8">
-                    <div class="form-hint">Minimum 8 characters with numbers and symbols</div>
+                <div class="nav-label">Home</div>
+            </a>
+            <a href="#transactions" class="nav-item" data-page="transactions">
+                <div class="nav-icon">
+                    <i class="fas fa-exchange-alt"></i>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="confirmPassword">Confirm New Password</label>
-                    <input type="password" id="confirmPassword" class="form-input" required>
+                <div class="nav-label">Transactions</div>
+            </a>
+            <a href="#beneficiary" class="nav-item" data-page="beneficiary">
+                <div class="nav-icon">
+                    <i class="fas fa-users"></i>
                 </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Password</button>
+                <div class="nav-label">Beneficiary</div>
+            </a>
+            <a href="#partners" class="nav-item" data-page="partners">
+                <div class="nav-icon">
+                    <i class="fas fa-handshake"></i>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Login Activity Modal -->
-    <div class="modal-overlay" id="loginActivityModal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h2>Login Activity</h2>
-            <div class="activity-list" id="loginActivityList">
-                <!-- Login activity will be populated by JavaScript -->
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('loginActivityModal')">Close</button>
-            </div>
-        </div>
+                <div class="nav-label">Partners</div>
+            </a>
+            <a href="#settings" class="nav-item" data-page="settings">
+                <div class="nav-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="nav-label">Settings</div>
+            </a>
+        </nav>
     </div>
 
     <script src="js/firebase-config.js" type="module"></script>
-    <script src="js/dashboard.js" type="module"></script>
+    <script>
+        // Page Navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup navigation
+            setupNavigation();
+            
+            // Check authentication
+            checkAuth();
+        });
+
+        function setupNavigation() {
+            // Mobile bottom nav
+            const mobileNavItems = document.querySelectorAll('.bottom-nav .nav-item');
+            const desktopNavItems = document.querySelectorAll('.desktop-nav-item');
+            const pages = document.querySelectorAll('.page');
+            const actionCards = document.querySelectorAll('.action-card');
+
+            function showPage(pageId) {
+                // Hide all pages
+                pages.forEach(page => page.classList.remove('active'));
+                
+                // Show selected page
+                const targetPage = document.getElementById(pageId + '-page');
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
+
+                // Update active nav items
+                mobileNavItems.forEach(item => item.classList.remove('active'));
+                desktopNavItems.forEach(item => item.classList.remove('active'));
+
+                // Set active state on clicked item
+                const activeMobileItem = document.querySelector(`.bottom-nav .nav-item[data-page="${pageId}"]`);
+                const activeDesktopItem = document.querySelector(`.desktop-nav-item[data-page="${pageId}"]`);
+                
+                if (activeMobileItem) activeMobileItem.classList.add('active');
+                if (activeDesktopItem) activeDesktopItem.classList.add('active');
+            }
+
+            // Mobile nav event listeners
+            mobileNavItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Desktop nav event listeners
+            desktopNavItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Action cards event listeners
+            actionCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageId = this.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            // Logout button
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        // Implement logout logic here
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+        }
+
+        async function checkAuth() {
+            // Implement authentication check here
+            // For now, we'll assume user is logged in
+            console.log('Authentication check passed');
+        }
+
+        // Add switch styles
+        const switchStyles = document.createElement('style');
+        switchStyles.textContent = `
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 50px;
+                height: 24px;
+            }
+            
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+            }
+            
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+            }
+            
+            input:checked + .slider {
+                background-color: var(--success);
+            }
+            
+            input:checked + .slider:before {
+                transform: translateX(26px);
+            }
+            
+            .slider.round {
+                border-radius: 24px;
+            }
+            
+            .slider.round:before {
+                border-radius: 50%;
+            }
+        `;
+        document.head.appendChild(switchStyles);
+    </script>
 </body>
 </html>
