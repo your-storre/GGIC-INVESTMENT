@@ -17,7 +17,10 @@
                 <div class="sidebar-logo">GGIC</div>
                 <p>Member Portal</p>
                 <div class="sidebar-user">
-                    <div class="user-avatar" id="userAvatar">JD</div>
+                    <div class="user-avatar" id="userAvatar">
+                        <img id="avatarImage" style="width: 100%; height: 100%; border-radius: 50%; display: none;">
+                        <span id="avatarInitials">JD</span>
+                    </div>
                     <div class="user-info">
                         <h4 id="userName">John Doe</h4>
                         <p>Investor</p>
@@ -61,9 +64,9 @@
                     <h1 id="pageTitle">Dashboard Overview</h1>
                 </div>
                 <div class="top-bar-actions">
-                    <div class="notification-bell">
+                    <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-count">3</span>
+                        <span class="notification-count" id="notificationCount">0</span>
                     </div>
                     <button class="mobile-menu-btn" id="mobileMenuBtn">
                         <i class="fas fa-bars"></i>
@@ -80,12 +83,12 @@
                         <div class="stat-card">
                             <div class="stat-value" id="investmentAmount">₵0.00</div>
                             <div class="stat-label">Total Investment</div>
-                            <div class="stat-change positive">+5.2% from last month</div>
+                            <div class="stat-change positive" id="investmentChange">+5.2% from last month</div>
                         </div>
                         <div class="stat-card primary">
                             <div class="stat-value" id="currentBalance">₵0.00</div>
                             <div class="stat-label">Current Balance</div>
-                            <div class="stat-change positive">+2.1% today</div>
+                            <div class="stat-change positive" id="balanceChange">+2.1% today</div>
                         </div>
                         <div class="stat-card success">
                             <div class="stat-value" id="dailyEarning">₵0.00</div>
@@ -95,7 +98,7 @@
                         <div class="stat-card warning">
                             <div class="stat-value" id="daysToMaturity">0</div>
                             <div class="stat-label">Days to Maturity</div>
-                            <div class="stat-change negative">Ending soon</div>
+                            <div class="stat-change" id="maturityStatus">Active</div>
                         </div>
                     </div>
 
@@ -103,10 +106,10 @@
                     <div class="charts-section">
                         <div class="chart-card">
                             <div class="chart-header">
-                                <h3>Earnings Growth</h3>
+                                <h3>Portfolio Growth</h3>
                                 <select id="chartPeriod" class="form-select" style="width: auto;">
                                     <option value="7d">Last 7 Days</option>
-                                    <option value="30d">Last 30 Days</option>
+                                    <option value="30d" selected>Last 30 Days</option>
                                     <option value="90d">Last 90 Days</option>
                                     <option value="1y">Last Year</option>
                                 </select>
@@ -118,7 +121,7 @@
                         
                         <div class="chart-card">
                             <div class="chart-header">
-                                <h3>Portfolio Allocation</h3>
+                                <h3>Earnings Distribution</h3>
                             </div>
                             <div class="chart-container">
                                 <canvas id="allocationChart"></canvas>
@@ -126,27 +129,32 @@
                         </div>
                     </div>
 
-                    <!-- Recent Activity -->
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Recent Activity</h3>
-                            <a href="#transactions" class="nav-item" data-page="transactions" style="color: var(--secondary-blue); text-decoration: none;">
-                                View All
-                            </a>
+                    <!-- Recent Activity & Market Overview -->
+                    <div class="charts-section">
+                        <div class="chart-card" style="flex: 2;">
+                            <div class="chart-header">
+                                <h3>Recent Activity</h3>
+                                <a href="#transactions" class="nav-item" data-page="transactions" style="color: var(--secondary-blue); text-decoration: none;">
+                                    View All
+                                </a>
+                            </div>
+                            <div class="activity-list" id="recentActivity">
+                                <div class="loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading recent activity...</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="activity-list" id="recentActivity">
-                            <!-- Activity items will be populated by JavaScript -->
-                        </div>
-                    </div>
 
-                    <!-- Live Stock Widget -->
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3>Market Overview</h3>
-                        </div>
-                        <div class="stock-ticker" style="background: transparent; padding: 1rem 0;">
-                            <div class="ticker-content" id="dashboardStockTicker">
-                                <!-- Stock data will be populated by JavaScript -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Market Overview</h3>
+                                <i class="fas fa-sync-alt" id="refreshStocks" style="cursor: pointer; color: var(--secondary-blue);"></i>
+                            </div>
+                            <div class="stock-widget" id="stockWidget">
+                                <div class="stock-list" id="stockList">
+                                    <!-- Stocks will be populated by JavaScript -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -155,26 +163,59 @@
                 <!-- Transactions Page -->
                 <div id="transactions-page" class="page-content">
                     <div class="form-section">
-                        <h2>Transaction History</h2>
-                        <div class="table-header">
-                            <h3>All Transactions</h3>
+                        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <h2>Transaction History</h2>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <select id="transactionFilter" class="form-select" style="width: auto;">
+                                    <option value="all">All Transactions</option>
+                                    <option value="deposit">Deposits</option>
+                                    <option value="profit">Profits</option>
+                                    <option value="withdrawal">Withdrawals</option>
+                                </select>
+                                <select id="transactionPeriod" class="form-select" style="width: auto;">
+                                    <option value="all">All Time</option>
+                                    <option value="7d">Last 7 Days</option>
+                                    <option value="30d">Last 30 Days</option>
+                                    <option value="90d">Last 90 Days</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="table-content">
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Type</th>
-                                            <th>Description</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="transactionsTable">
-                                        <!-- Transactions will be populated by JavaScript -->
-                                    </tbody>
-                                </table>
+                        
+                        <div class="data-table">
+                            <div class="table-content">
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Reference</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="transactionsTable">
+                                            <tr>
+                                                <td colspan="6" class="text-center">
+                                                    <div class="loading">
+                                                        <div class="loading-spinner"></div>
+                                                        <p>Loading transactions...</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="table-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 1rem; border-top: 1px solid #e5e7eb;">
+                                    <div class="table-info" id="tableInfo">
+                                        Showing 0 transactions
+                                    </div>
+                                    <div class="pagination" id="pagination">
+                                        <!-- Pagination will be added by JavaScript -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -184,26 +225,50 @@
                 <div id="beneficiary-page" class="page-content">
                     <div class="form-section">
                         <h2>Beneficiary Management</h2>
+                        <p style="margin-bottom: 2rem; color: var(--text-light);">
+                            Manage your investment beneficiary information. All changes require administrative approval.
+                        </p>
                         
                         <!-- Current Beneficiary -->
                         <div class="card" style="margin-bottom: 2rem;">
-                            <h3>Current Beneficiary</h3>
+                            <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                <h3>Current Beneficiary</h3>
+                                <span class="status-badge completed" id="beneficiaryStatus">Active</span>
+                            </div>
                             <div id="currentBeneficiary">
-                                <!-- Beneficiary info will be populated by JavaScript -->
+                                <div class="loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading beneficiary information...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Beneficiary Update History -->
+                        <div class="card" style="margin-bottom: 2rem;">
+                            <h3>Update History</h3>
+                            <div class="activity-list" id="beneficiaryHistory">
+                                <div class="empty-state">
+                                    <i class="fas fa-history"></i>
+                                    <p>No update history available</p>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Update Beneficiary Form -->
                         <div class="card">
-                            <h3>Update Beneficiary</h3>
+                            <h3>Update Beneficiary Information</h3>
+                            <p style="margin-bottom: 1.5rem; color: var(--text-light); font-size: 0.9rem;">
+                                Please provide complete and accurate information for your beneficiary. All updates are subject to verification and approval.
+                            </p>
+                            
                             <form id="beneficiaryForm">
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label class="form-label" for="beneficiaryName">Full Name</label>
-                                        <input type="text" id="beneficiaryName" class="form-input" required>
+                                        <label class="form-label" for="beneficiaryName">Full Name *</label>
+                                        <input type="text" id="beneficiaryName" class="form-input" required placeholder="Enter beneficiary's full name">
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label" for="beneficiaryRelationship">Relationship</label>
+                                        <label class="form-label" for="beneficiaryRelationship">Relationship *</label>
                                         <select id="beneficiaryRelationship" class="form-select" required>
                                             <option value="">Select Relationship</option>
                                             <option value="spouse">Spouse</option>
@@ -214,26 +279,49 @@
                                         </select>
                                     </div>
                                 </div>
+                                
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label class="form-label" for="beneficiaryPhone">Phone Number</label>
-                                        <input type="tel" id="beneficiaryPhone" class="form-input" required>
+                                        <label class="form-label" for="beneficiaryPhone">Phone Number *</label>
+                                        <input type="tel" id="beneficiaryPhone" class="form-input" required placeholder="+233 XX XXX XXXX">
+                                        <div class="form-hint">Include country code (e.g., +233)</div>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label" for="beneficiaryEmail">Email Address</label>
-                                        <input type="email" id="beneficiaryEmail" class="form-input">
+                                        <input type="email" id="beneficiaryEmail" class="form-input" placeholder="beneficiary@example.com">
                                     </div>
                                 </div>
+                                
                                 <div class="form-group">
-                                    <label class="form-label" for="beneficiaryAddress">Address</label>
-                                    <textarea id="beneficiaryAddress" class="form-input" rows="3"></textarea>
+                                    <label class="form-label" for="beneficiaryAddress">Residential Address</label>
+                                    <textarea id="beneficiaryAddress" class="form-input" rows="3" placeholder="Enter complete residential address"></textarea>
                                 </div>
+                                
                                 <div class="form-group">
-                                    <label class="form-label" for="updateReason">Reason for Update</label>
-                                    <textarea id="updateReason" class="form-input" rows="3" required placeholder="Please explain why you are updating the beneficiary..."></textarea>
+                                    <label class="form-label" for="beneficiaryId">ID Number (Optional)</label>
+                                    <input type="text" id="beneficiaryId" class="form-input" placeholder="Ghana Card or National ID">
                                 </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="updateReason">Reason for Update *</label>
+                                    <textarea id="updateReason" class="form-input" rows="3" required placeholder="Please explain why you are updating the beneficiary information..."></textarea>
+                                    <div class="form-hint">Provide detailed explanation for the beneficiary change</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="terms-checkbox">
+                                        <input type="checkbox" id="beneficiaryAgreement" required>
+                                        <label for="beneficiaryAgreement" class="terms-text">
+                                            I confirm that the information provided is accurate and complete. I understand that this update request requires administrative approval and may take 2-3 business days to process.
+                                        </label>
+                                    </div>
+                                </div>
+                                
                                 <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetBeneficiaryForm()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary" id="submitBeneficiaryBtn">
+                                        <i class="fas fa-paper-plane"></i> Submit Update Request
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -243,57 +331,30 @@
                 <!-- Investment Partners Page -->
                 <div id="partners-page" class="page-content">
                     <div class="form-section">
-                        <h2>Our Investment Partners</h2>
-                        <p>GGIC strategically invests in these growing Ghanaian businesses</p>
+                        <div class="chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <div>
+                                <h2>Our Investment Partners</h2>
+                                <p style="margin: 0; color: var(--text-light);">GGIC strategically invests in these growing Ghanaian businesses</p>
+                            </div>
+                            <div class="investment-summary">
+                                <div class="stat-value" style="font-size: 1.5rem; color: var(--accent-gold);">₵150M+</div>
+                                <div class="stat-label">Total Investments Deployed</div>
+                            </div>
+                        </div>
                         
-                        <div class="card-grid">
-                            <div class="card">
-                                <h3>Kofi Jobs Construction Ltd</h3>
-                                <p><strong>Sector:</strong> Infrastructure & Construction</p>
-                                <p><strong>Investment:</strong> ₵15,000,000</p>
-                                <p><strong>Performance:</strong> +12.5% YTD</p>
-                                <p>Leading infrastructure development specializing in affordable housing and commercial projects.</p>
+                        <div class="partners-filter" style="margin-bottom: 2rem;">
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-filter="all">All Sectors</button>
+                                <button class="filter-btn" data-filter="construction">Construction</button>
+                                <button class="filter-btn" data-filter="agriculture">Agriculture</button>
+                                <button class="filter-btn" data-filter="technology">Technology</button>
+                                <button class="filter-btn" data-filter="manufacturing">Manufacturing</button>
+                                <button class="filter-btn" data-filter="logistics">Logistics</button>
                             </div>
-                            
-                            <div class="card">
-                                <h3>Adom Agro Supplies</h3>
-                                <p><strong>Sector:</strong> Agriculture</p>
-                                <p><strong>Investment:</strong> ₵8,500,000</p>
-                                <p><strong>Performance:</strong> +8.2% YTD</p>
-                                <p>Agricultural inputs and processing revolutionizing Ghana's farming sector.</p>
-                            </div>
-                            
-                            <div class="card">
-                                <h3>Nana Foods Processing</h3>
-                                <p><strong>Sector:</strong> Food Manufacturing</p>
-                                <p><strong>Investment:</strong> ₵6,200,000</p>
-                                <p><strong>Performance:</strong> +15.3% YTD</p>
-                                <p>High-quality Ghanaian food products for local and international markets.</p>
-                            </div>
-                            
-                            <div class="card">
-                                <h3>Twum & Sons Logistics</h3>
-                                <p><strong>Sector:</strong> Transportation & Logistics</p>
-                                <p><strong>Investment:</strong> ₵12,000,000</p>
-                                <p><strong>Performance:</strong> +9.8% YTD</p>
-                                <p>Comprehensive logistics services connecting Ghanaian businesses to regional markets.</p>
-                            </div>
-                            
-                            <div class="card">
-                                <h3>Akosua Textiles Enterprise</h3>
-                                <p><strong>Sector:</strong> Manufacturing</p>
-                                <p><strong>Investment:</strong> ₵5,500,000</p>
-                                <p><strong>Performance:</strong> +7.5% YTD</p>
-                                <p>Traditional Ghanaian textile manufacturer preserving cultural heritage.</p>
-                            </div>
-                            
-                            <div class="card">
-                                <h3>Ghana Tech Solutions</h3>
-                                <p><strong>Sector:</strong> Technology</p>
-                                <p><strong>Investment:</strong> ₵10,000,000</p>
-                                <p><strong>Performance:</strong> +22.1% YTD</p>
-                                <p>Innovative software solutions for Ghana's growing digital economy.</p>
-                            </div>
+                        </div>
+                        
+                        <div class="card-grid" id="partnersGrid">
+                            <!-- Partners will be populated by JavaScript -->
                         </div>
                     </div>
                 </div>
@@ -308,60 +369,147 @@
                             <h3>Personal Information</h3>
                             <div class="profile-header">
                                 <div class="profile-avatar" id="profileAvatar">
-                                    JD
+                                    <img id="profileAvatarImage" style="width: 100%; height: 100%; border-radius: 50%; display: none;">
+                                    <span id="profileAvatarInitials">JD</span>
                                     <div class="avatar-upload" id="avatarUpload">
                                         <i class="fas fa-camera"></i>
+                                        <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
                                     </div>
                                 </div>
                                 <div>
                                     <h4 id="profileName">John Doe</h4>
                                     <p>Member since <span id="memberSince">2024</span></p>
+                                    <p class="text-small" id="memberId">ID: GGIC-M-001234</p>
                                 </div>
                             </div>
                             
                             <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-input" value="John Doe" readonly>
+                                    <input type="text" class="form-input" value="John Doe" id="profileFullName" readonly>
+                                    <div class="form-hint">Legal name as registered</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Ghana Card ID</label>
-                                    <input type="text" class="form-input" value="GHA-123456789" readonly>
+                                    <input type="text" class="form-input" value="GHA-123456789" id="profileGhanaCard" readonly>
+                                    <div class="form-hint">National identification number</div>
                                 </div>
                             </div>
                             
                             <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
-                                    <div style="display: flex; gap: 1rem;">
-                                        <input type="email" class="form-input" value="john.doe@example.com" id="emailInput" readonly>
-                                        <button type="button" class="btn btn-secondary" onclick="enableEdit('email')">Change</button>
+                                    <div class="input-with-action">
+                                        <input type="email" class="form-input" value="john.doe@example.com" id="profileEmail" readonly>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableFieldEdit('email')">Change</button>
                                     </div>
+                                    <div class="form-hint">Primary contact email</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Phone Number</label>
-                                    <div style="display: flex; gap: 1rem;">
-                                        <input type="tel" class="form-input" value="+233 24 123 4567" id="phoneInput" readonly>
-                                        <button type="button" class="btn btn-secondary" onclick="enableEdit('phone')">Change</button>
+                                    <div class="input-with-action">
+                                        <input type="tel" class="form-input" value="+233 24 123 4567" id="profilePhone" readonly>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="enableFieldEdit('phone')">Change</button>
+                                    </div>
+                                    <div class="form-hint">Primary contact number</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Date of Birth</label>
+                                    <input type="text" class="form-input" value="15 March 1985" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Account Status</label>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="status-badge completed">Active</span>
+                                        <span class="text-small">Verified</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Security Settings -->
-                        <div class="card">
+                        <div class="card" style="margin-bottom: 2rem;">
                             <h3>Security Settings</h3>
-                            <div class="form-group">
-                                <button class="btn btn-secondary" onclick="changePassword()">
+                            
+                            <div class="security-item">
+                                <div class="security-info">
+                                    <h4>Password</h4>
+                                    <p>Last changed: <span id="lastPasswordChange">2 months ago</span></p>
+                                </div>
+                                <button class="btn btn-primary" onclick="changePassword()">
                                     <i class="fas fa-key"></i> Change Password
                                 </button>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Two-Factor Authentication</label>
-                                <div style="display: flex; justify-content: between; align-items: center;">
-                                    <span>Enabled</span>
-                                    <button class="btn btn-secondary">Manage</button>
+                            
+                            <div class="security-item">
+                                <div class="security-info">
+                                    <h4>Two-Factor Authentication</h4>
+                                    <p>Enhanced security for your account</p>
                                 </div>
+                                <div class="toggle-switch">
+                                    <label class="switch">
+                                        <input type="checkbox" id="twoFactorToggle" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                    <span>Enabled</span>
+                                </div>
+                            </div>
+                            
+                            <div class="security-item">
+                                <div class="security-info">
+                                    <h4>Login Activity</h4>
+                                    <p>Recent account access</p>
+                                </div>
+                                <button class="btn btn-secondary" onclick="viewLoginActivity()">
+                                    <i class="fas fa-history"></i> View History
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Notification Preferences -->
+                        <div class="card">
+                            <h3>Notification Preferences</h3>
+                            
+                            <div class="notification-item">
+                                <div class="notification-info">
+                                    <h4>Email Notifications</h4>
+                                    <p>Receive updates via email</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="emailNotifications" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="notification-item">
+                                <div class="notification-info">
+                                    <h4>SMS Alerts</h4>
+                                    <p>Important updates via SMS</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="smsNotifications" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="notification-item">
+                                <div class="notification-info">
+                                    <h4>Investment Reports</h4>
+                                    <p>Weekly portfolio performance</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="reportNotifications" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-primary" onclick="saveNotificationPreferences()">
+                                    <i class="fas fa-save"></i> Save Preferences
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -370,8 +518,44 @@
         </main>
     </div>
 
-    <!-- File Upload Input -->
-    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+    <!-- Change Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-content">
+            <h2>Change Password</h2>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label class="form-label" for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" class="form-input" required minlength="8">
+                    <div class="form-hint">Minimum 8 characters with numbers and symbols</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirmPassword">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" class="form-input" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Activity Modal -->
+    <div class="modal-overlay" id="loginActivityModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <h2>Login Activity</h2>
+            <div class="activity-list" id="loginActivityList">
+                <!-- Login activity will be populated by JavaScript -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('loginActivityModal')">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/firebase-config.js" type="module"></script>
     <script src="js/dashboard.js" type="module"></script>
